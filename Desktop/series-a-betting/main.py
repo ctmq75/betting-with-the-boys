@@ -22,7 +22,7 @@ def setup_directories():
 
 def load_data():
     """Load and validate data"""
-    data_file = 'data/raw/serie_a_historical.csv'
+    data_file = 'Desktop/series-a-betting/data/raw/serie_a_historical.csv'
     
     if not os.path.exists(data_file):
         print(f"❌ Data file not found: {data_file}")

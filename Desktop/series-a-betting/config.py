@@ -6,7 +6,7 @@ Adjust these parameters to tune your model performance
 import os
 
 # File paths
-DATA_RAW_PATH = "data/raw/serie_a_historical.csv"
+DATA_RAW_PATH = "Desktop/series-a-betting/data/raw/serie_a_historical.csv"
 DATA_PROCESSED_PATH = "data/processed/"
 MODELS_PATH = "models/saved_models/"
 RESULTS_PATH = "results/"
