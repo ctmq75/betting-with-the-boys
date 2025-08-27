@@ -96,7 +96,7 @@ def load_fixtures_from_csv(csv_file_path):
 def get_team_recent_form(team_name):
     """Get recent form for a specific team"""
     try:
-        df = pd.read_csv('data/raw/serie_a_historical.csv')
+        df = pd.read_csv('Desktop/series-a-betting/data/raw/serie_a_historical.csv')
         df['date_GMT'] = pd.to_datetime(df['date_GMT'])
         df = df.sort_values('date_GMT')
         
