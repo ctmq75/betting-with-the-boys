@@ -11,7 +11,7 @@ def test_improved_model():
     
     # Load data
     try:
-        df = pd.read_csv('data/raw/serie_a_historical.csv')
+        df = pd.read_csv('Desktop/series-a-betting/data/raw/serie_a_historical.csv')
         print(f"✅ Loaded {len(df)} historical matches")
     except Exception as e:
         print(f"❌ Error loading data: {e}")

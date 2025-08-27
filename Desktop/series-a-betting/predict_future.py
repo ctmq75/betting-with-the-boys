@@ -21,7 +21,7 @@ class FutureGamePredictor:
         
         # Load historical data and train model
         print("🔄 Loading historical data and training model...")
-        df = pd.read_csv('data/raw/serie_a_historical.csv')
+        df = pd.read_csv('Desktop/series-a-betting/data/raw/serie_a_historical.csv')
         
         model = SerieABettingModel()
         df_clean = model.load_and_clean_data(df)
