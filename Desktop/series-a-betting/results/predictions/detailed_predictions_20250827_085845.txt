@@ -1,0 +1,229 @@
+🔮 SERIE A MATCH PREDICTIONS
+==================================================
+
+Generated: 2025-08-27 08:58:45
+
+MATCH 1: Genoa vs Lecce
+Date: 2025-08-23 15:00
+------------------------------
+🏠 Home Win: 22.7%
+🤝 Draw: 63.7%
+✈️  Away Win: 13.6%
+⚽ Over 2.5 Goals: 9.0%
+🥅 BTTS: 50.0%
+🎯 Most Likely: Draw
+⚽ Predicted Score: 1-1
+🏠 Home Goals: 1 (1.4 xG)
+✈️  Away Goals: 1 (1.0 xG)
+📊 Total Goals: 2
+
+💰 BETTING RECOMMENDATIONS:
+   • Under 2.5 Goals - 91.0% confidence
+     Model predicts 91.0% chance of 0-2 goals
+
+==================================================
+
+MATCH 2: Sassuolo vs Napoli
+Date: 2025-08-23 15:00
+------------------------------
+🏠 Home Win: 5.9%
+🤝 Draw: 25.1%
+✈️  Away Win: 69.1%
+⚽ Over 2.5 Goals: 23.8%
+🥅 BTTS: 16.7%
+🎯 Most Likely: Away Win
+⚽ Predicted Score: 1-2
+🏠 Home Goals: 1 (1.05 xG)
+✈️  Away Goals: 2 (1.3 xG)
+📊 Total Goals: 3
+
+💰 BETTING RECOMMENDATIONS:
+   • Away Win - 69.1% confidence
+     Model predicts 69.1% chance of away win
+   • Under 2.5 Goals - 76.2% confidence
+     Model predicts 76.2% chance of 0-2 goals
+   • Both Teams To Score - No - 83.3% confidence
+     Model predicts 83.3% chance of clean sheet
+
+==================================================
+
+MATCH 3: AC Milan vs Cremonese
+Date: 2025-08-23 15:00
+------------------------------
+🏠 Home Win: 8.5%
+🤝 Draw: 58.5%
+✈️  Away Win: 33.0%
+⚽ Over 2.5 Goals: 11.8%
+🥅 BTTS: 26.6%
+🎯 Most Likely: Draw
+⚽ Predicted Score: 1-1
+🏠 Home Goals: 1 (1.45 xG)
+✈️  Away Goals: 1 (1.2 xG)
+📊 Total Goals: 2
+
+💰 BETTING RECOMMENDATIONS:
+   • Under 2.5 Goals - 88.2% confidence
+     Model predicts 88.2% chance of 0-2 goals
+   • Both Teams To Score - No - 73.4% confidence
+     Model predicts 73.4% chance of clean sheet
+
+==================================================
+
+MATCH 4: Roma vs Bologna
+Date: 2025-08-23 15:00
+------------------------------
+🏠 Home Win: 46.2%
+🤝 Draw: 38.9%
+✈️  Away Win: 14.9%
+⚽ Over 2.5 Goals: 25.2%
+🥅 BTTS: 27.5%
+🎯 Most Likely: Home Win
+⚽ Predicted Score: 2-1
+🏠 Home Goals: 2 (1.55 xG)
+✈️  Away Goals: 1 (0.9 xG)
+📊 Total Goals: 3
+
+💰 BETTING RECOMMENDATIONS:
+   • Under 2.5 Goals - 74.8% confidence
+     Model predicts 74.8% chance of 0-2 goals
+   • Both Teams To Score - No - 72.5% confidence
+     Model predicts 72.5% chance of clean sheet
+
+==================================================
+
+MATCH 5: Cagliari vs Fiorentina
+Date: 2025-08-24 15:00
+------------------------------
+🏠 Home Win: 7.3%
+🤝 Draw: 23.1%
+✈️  Away Win: 69.6%
+⚽ Over 2.5 Goals: 22.9%
+🥅 BTTS: 22.1%
+🎯 Most Likely: Away Win
+⚽ Predicted Score: 1-2
+🏠 Home Goals: 1 (1.45 xG)
+✈️  Away Goals: 2 (1.5 xG)
+📊 Total Goals: 3
+
+💰 BETTING RECOMMENDATIONS:
+   • Away Win - 69.6% confidence
+     Model predicts 69.6% chance of away win
+   • Under 2.5 Goals - 77.1% confidence
+     Model predicts 77.1% chance of 0-2 goals
+   • Both Teams To Score - No - 77.9% confidence
+     Model predicts 77.9% chance of clean sheet
+
+==================================================
+
+MATCH 6: Como vs Lazio
+Date: 2025-08-24 15:00
+------------------------------
+🏠 Home Win: 51.2%
+🤝 Draw: 40.3%
+✈️  Away Win: 8.4%
+⚽ Over 2.5 Goals: 14.6%
+🥅 BTTS: 27.9%
+🎯 Most Likely: Home Win
+⚽ Predicted Score: 2-1
+🏠 Home Goals: 2 (1.65 xG)
+✈️  Away Goals: 1 (0.95 xG)
+📊 Total Goals: 3
+
+💰 BETTING RECOMMENDATIONS:
+   • Under 2.5 Goals - 85.4% confidence
+     Model predicts 85.4% chance of 0-2 goals
+   • Both Teams To Score - No - 72.1% confidence
+     Model predicts 72.1% chance of clean sheet
+
+==================================================
+
+MATCH 7: Atalanta vs Pisa
+Date: 2025-08-24 15:00
+------------------------------
+🏠 Home Win: 62.0%
+🤝 Draw: 30.6%
+✈️  Away Win: 7.4%
+⚽ Over 2.5 Goals: 24.4%
+🥅 BTTS: 44.2%
+🎯 Most Likely: Home Win
+⚽ Predicted Score: 2-1
+🏠 Home Goals: 2 (1.8 xG)
+✈️  Away Goals: 1 (1.05 xG)
+📊 Total Goals: 3
+
+💰 BETTING RECOMMENDATIONS:
+   • Home Win - 62.0% confidence
+     Model predicts 62.0% chance of home win
+   • Under 2.5 Goals - 75.6% confidence
+     Model predicts 75.6% chance of 0-2 goals
+
+==================================================
+
+MATCH 8: Juventus vs Parma
+Date: 2025-08-24 15:00
+------------------------------
+🏠 Home Win: 43.2%
+🤝 Draw: 46.0%
+✈️  Away Win: 10.8%
+⚽ Over 2.5 Goals: 10.0%
+🥅 BTTS: 20.1%
+🎯 Most Likely: Draw
+⚽ Predicted Score: 1-1
+🏠 Home Goals: 1 (1.45 xG)
+✈️  Away Goals: 1 (1.1 xG)
+📊 Total Goals: 2
+
+💰 BETTING RECOMMENDATIONS:
+   • Under 2.5 Goals - 90.0% confidence
+     Model predicts 90.0% chance of 0-2 goals
+   • Both Teams To Score - No - 79.9% confidence
+     Model predicts 79.9% chance of clean sheet
+
+==================================================
+
+MATCH 9: Udinese vs Hellas Verona
+Date: 2025-08-25 15:00
+------------------------------
+🏠 Home Win: 9.5%
+🤝 Draw: 37.6%
+✈️  Away Win: 52.9%
+⚽ Over 2.5 Goals: 16.6%
+🥅 BTTS: 29.8%
+🎯 Most Likely: Away Win
+⚽ Predicted Score: 1-2
+🏠 Home Goals: 1 (1.15 xG)
+✈️  Away Goals: 2 (1.5 xG)
+📊 Total Goals: 3
+
+💰 BETTING RECOMMENDATIONS:
+   • Under 2.5 Goals - 83.4% confidence
+     Model predicts 83.4% chance of 0-2 goals
+   • Both Teams To Score - No - 70.2% confidence
+     Model predicts 70.2% chance of clean sheet
+
+==================================================
+
+MATCH 10: Inter vs Torino
+Date: 2025-08-25 15:00
+------------------------------
+🏠 Home Win: 64.5%
+🤝 Draw: 29.0%
+✈️  Away Win: 6.5%
+⚽ Over 2.5 Goals: 26.2%
+🥅 BTTS: 33.0%
+🎯 Most Likely: Home Win
+⚽ Predicted Score: 2-1
+🏠 Home Goals: 2 (1.7 xG)
+✈️  Away Goals: 1 (0.75 xG)
+📊 Total Goals: 3
+
+💰 BETTING RECOMMENDATIONS:
+   • Home Win - 64.5% confidence
+     Model predicts 64.5% chance of home win
+   • Under 2.5 Goals - 73.8% confidence
+     Model predicts 73.8% chance of 0-2 goals
+   • Both Teams To Score - No - 67.0% confidence
+     Model predicts 67.0% chance of clean sheet
+
+==================================================
+
