@@ -118,14 +118,14 @@ class FutureGamePredictor:
         
         # FEATURE IMPORTANCE WEIGHTS - Adjust these to change what the model focuses on
         FEATURE_WEIGHTS = {
-            'recent_form': 1.5,      # Recent PPG gets 1.5x weight (very important)
+            'recent_form': 1.0,      # Recent PPG gets 1.5x weight (very important)
             'historical_form': 1.0,   # Overall PPG gets normal weight  
-            'attacking': 1.3,        # Goals scored gets 1.3x weight (important)
-            'defensive': 1.1,        # Goals conceded gets 1.1x weight
-            'home_advantage': 1.2,   # Home advantage multiplier
-            'xg_importance': 0.9,    # Expected goals less important than actual goals
-            'possession': 0.8,       # Possession less important
-            'set_pieces': 1.1        # Corners slightly more important
+            'attacking': 1.0,        # Goals scored gets 1.3x weight (important)
+            'defensive': 1.0,        # Goals conceded gets 1.1x weight
+            'home_advantage': 1.0,   # Home advantage multiplier
+            'xg_importance': 1.0,    # Expected goals less important than actual goals
+            'possession': 1.0,       # Possession less important
+            'set_pieces': 1.0       # Corners slightly more important
         }
         
         # Create feature dictionary matching training data structure
