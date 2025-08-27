@@ -13,7 +13,7 @@ from predict_future import FutureGamePredictor
 def get_real_teams():
     """Get actual team names from your historical data"""
     try:
-        df = pd.read_csv('data/raw/serie_a_historical.csv')
+        df = pd.read_csv('Desktop/series-a-betting/data/raw/serie_a_historical.csv')
         
         # Get all unique team names
         home_teams = set(df['home_team'].unique())
