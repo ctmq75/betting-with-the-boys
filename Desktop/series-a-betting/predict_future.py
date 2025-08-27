@@ -1,7 +1,7 @@
 """
-Serie A Future Game Predictor
+Serie A Future Game Predictor - UPDATED VERSION
 Predicts outcomes for upcoming matches using trained models
-Fixed version with dates in output
+Enhanced with improved goal prediction formulas and feature weights
 """
 
 import pandas as pd
@@ -21,7 +21,7 @@ class FutureGamePredictor:
         
         # Load historical data and train model
         print("🔄 Loading historical data and training model...")
-        df = pd.read_csv('Desktop/series-a-betting/data/raw/serie_a_historical.csv')
+        df = pd.read_csv('data/raw/serie_a_historical.csv')
         
         model = SerieABettingModel()
         df_clean = model.load_and_clean_data(df)
@@ -110,58 +110,84 @@ class FutureGamePredictor:
         print(f"✅ Calculated stats for {len(teams)} teams")
     
     def create_upcoming_match_features(self, home_team, away_team, game_week=20):
-        """Create features for an upcoming match"""
+        """Create features for an upcoming match - UPDATED WITH CUSTOM WEIGHTS"""
         
         # Get team stats
         home_stats = self.team_stats.get(home_team, {'ppg': 1.0, 'goals_per_game': 1.0, 'goals_against_per_game': 1.0})
         away_stats = self.team_stats.get(away_team, {'ppg': 1.0, 'goals_per_game': 1.0, 'goals_against_per_game': 1.0})
         
+        # FEATURE IMPORTANCE WEIGHTS - Adjust these to change what the model focuses on
+        FEATURE_WEIGHTS = {
+            'recent_form': 1.5,      # Recent PPG gets 1.5x weight (very important)
+            'historical_form': 1.0,   # Overall PPG gets normal weight  
+            'attacking': 1.3,        # Goals scored gets 1.3x weight (important)
+            'defensive': 1.1,        # Goals conceded gets 1.1x weight
+            'home_advantage': 1.2,   # Home advantage multiplier
+            'xg_importance': 0.9,    # Expected goals less important than actual goals
+            'possession': 0.8,       # Possession less important
+            'set_pieces': 1.1        # Corners slightly more important
+        }
+        
         # Create feature dictionary matching training data structure
         features = {}
         
-        # Basic team performance
-        features['home_ppg'] = home_stats['ppg']
-        features['away_ppg'] = away_stats['ppg']
-        features['ppg_difference'] = home_stats['ppg'] - away_stats['ppg']
+        # WEIGHTED TEAM PERFORMANCE
+        features['home_ppg'] = home_stats['ppg'] * FEATURE_WEIGHTS['recent_form']
+        features['away_ppg'] = away_stats['ppg'] * FEATURE_WEIGHTS['recent_form']
+        features['ppg_difference'] = features['home_ppg'] - features['away_ppg']
         
         # Pre-match features (use current form as estimate)
-        features['Pre-Match PPG (Home)'] = home_stats['ppg']
-        features['Pre-Match PPG (Away)'] = away_stats['ppg']
-        features['pre_match_ppg_difference'] = home_stats['ppg'] - away_stats['ppg']
+        features['Pre-Match PPG (Home)'] = home_stats['ppg'] * FEATURE_WEIGHTS['historical_form']
+        features['Pre-Match PPG (Away)'] = away_stats['ppg'] * FEATURE_WEIGHTS['historical_form']
+        features['pre_match_ppg_difference'] = features['Pre-Match PPG (Home)'] - features['Pre-Match PPG (Away)']
         
-        # Expected goals (estimate based on scoring form)
-        home_xg = home_stats['goals_per_game']
-        away_xg = away_stats['goals_per_game']
-        features['team_a_xg'] = home_xg
-        features['team_b_xg'] = away_xg
-        features['xg_difference'] = home_xg - away_xg
-        features['Home Team Pre-Match xG'] = home_xg
-        features['Away Team Pre-Match xG'] = away_xg
-        features['pre_match_xg_difference'] = home_xg - away_xg
+        # WEIGHTED EXPECTED GOALS
+        base_home_xg = home_stats['goals_per_game'] * FEATURE_WEIGHTS['attacking']
+        base_away_xg = away_stats['goals_per_game'] * FEATURE_WEIGHTS['attacking']
         
-        # Estimated match stats (based on team averages)
-        features['home_team_shots'] = home_stats['goals_per_game'] * 5  # Rough estimate
-        features['away_team_shots'] = away_stats['goals_per_game'] * 5
-        features['home_team_shots_on_target'] = home_stats['goals_per_game'] * 2
-        features['away_team_shots_on_target'] = away_stats['goals_per_game'] * 2
+        # Apply home advantage to xG
+        home_xg = base_home_xg * FEATURE_WEIGHTS['home_advantage']
+        away_xg = base_away_xg  # No home advantage for away team
         
-        # Possession estimate (slightly favor home team)
+        features['team_a_xg'] = home_xg * FEATURE_WEIGHTS['xg_importance']
+        features['team_b_xg'] = away_xg * FEATURE_WEIGHTS['xg_importance']
+        features['xg_difference'] = features['team_a_xg'] - features['team_b_xg']
+        features['Home Team Pre-Match xG'] = features['team_a_xg']
+        features['Away Team Pre-Match xG'] = features['team_b_xg']
+        features['pre_match_xg_difference'] = features['xg_difference']
+        
+        # ENHANCED MATCH STATS with weights
+        home_attack_strength = home_stats['goals_per_game'] * FEATURE_WEIGHTS['attacking']
+        away_attack_strength = away_stats['goals_per_game'] * FEATURE_WEIGHTS['attacking']
+        
+        # Estimated shots based on attacking strength
+        features['home_team_shots'] = (10 + home_attack_strength * 3) * FEATURE_WEIGHTS['home_advantage']
+        features['away_team_shots'] = 10 + away_attack_strength * 3
+        features['home_team_shots_on_target'] = features['home_team_shots'] * 0.35
+        features['away_team_shots_on_target'] = features['away_team_shots'] * 0.35
+        
+        # WEIGHTED POSSESSION - stronger teams get more possession
+        team_strength_diff = (home_stats['ppg'] - away_stats['ppg']) * FEATURE_WEIGHTS['recent_form']
         base_possession = 50
-        possession_advantage = (home_stats['ppg'] - away_stats['ppg']) * 5
-        features['home_team_possession'] = min(65, max(35, base_possession + possession_advantage + 5))  # Home advantage
-        features['away_team_possession'] = 100 - features['home_team_possession']
+        possession_adjustment = team_strength_diff * 8  # Each PPG point = 8% possession
+        home_advantage_possession = 3 * FEATURE_WEIGHTS['home_advantage']  # Home gets extra 3%
         
-        # Corner and other stats estimates
-        features['home_team_corner_count'] = 5 + (home_stats['ppg'] - 1) * 2
-        features['away_team_corner_count'] = 5 + (away_stats['ppg'] - 1) * 2
+        features['home_team_possession'] = min(70, max(30, 
+            base_possession + possession_adjustment + home_advantage_possession)) * FEATURE_WEIGHTS['possession']
+        features['away_team_possession'] = (100 - features['home_team_possession']) * FEATURE_WEIGHTS['possession']
         
-        # Cards estimates
-        features['home_team_yellow_cards'] = 2
-        features['away_team_yellow_cards'] = 2
+        # WEIGHTED SET PIECES (corners)
+        features['home_team_corner_count'] = (4 + home_attack_strength) * FEATURE_WEIGHTS['set_pieces'] * FEATURE_WEIGHTS['home_advantage']
+        features['away_team_corner_count'] = (4 + away_attack_strength) * FEATURE_WEIGHTS['set_pieces']
+        
+        # Cards and fouls - slightly weighted by aggression/form
+        aggression_factor = 1 + abs(team_strength_diff) * 0.1  # Closer games = more cards
+        features['home_team_yellow_cards'] = 2 * aggression_factor
+        features['away_team_yellow_cards'] = 2 * aggression_factor  
         features['home_team_red_cards'] = 0
         features['away_team_red_cards'] = 0
-        features['home_team_fouls'] = 12
-        features['away_team_fouls'] = 12
+        features['home_team_fouls'] = 12 * aggression_factor
+        features['away_team_fouls'] = 12 * aggression_factor
         
         # Pre-match percentages (league averages)
         features['average_goals_per_match_pre_match'] = 2.5
@@ -170,55 +196,58 @@ class FutureGamePredictor:
         features['over_25_percentage_pre_match'] = 60
         features['over_35_percentage_pre_match'] = 35
         
-        # Market-based features (we'll estimate these)
-        # Stronger team gets lower odds
-        home_strength = home_stats['ppg']
-        away_strength = away_stats['ppg']
+        # MARKET PROBABILITIES with enhanced logic
+        home_strength = home_stats['ppg'] * FEATURE_WEIGHTS['recent_form'] * FEATURE_WEIGHTS['home_advantage']
+        away_strength = away_stats['ppg'] * FEATURE_WEIGHTS['recent_form']
         strength_diff = home_strength - away_strength
         
-        # Estimate odds based on strength difference
-        if strength_diff > 0.5:  # Home much stronger
-            home_odds = 1.8
-            away_odds = 4.5
-            draw_odds = 3.5
-        elif strength_diff > 0.2:  # Home slightly stronger
-            home_odds = 2.2
-            away_odds = 3.5
-            draw_odds = 3.2
-        elif strength_diff < -0.5:  # Away much stronger
-            home_odds = 4.5
-            away_odds = 1.8
-            draw_odds = 3.5
-        elif strength_diff < -0.2:  # Away slightly stronger
-            home_odds = 3.5
-            away_odds = 2.2
-            draw_odds = 3.2
-        else:  # Evenly matched
-            home_odds = 2.8
-            away_odds = 2.8
-            draw_odds = 3.0
+        # More nuanced odds estimation
+        if strength_diff > 0.8:  # Home very strong
+            home_odds, away_odds, draw_odds = 1.6, 5.5, 4.0
+        elif strength_diff > 0.4:  # Home strong
+            home_odds, away_odds, draw_odds = 1.9, 4.2, 3.6
+        elif strength_diff > 0.1:  # Home slight edge
+            home_odds, away_odds, draw_odds = 2.3, 3.4, 3.2
+        elif strength_diff < -0.8:  # Away very strong
+            home_odds, away_odds, draw_odds = 5.5, 1.6, 4.0
+        elif strength_diff < -0.4:  # Away strong
+            home_odds, away_odds, draw_odds = 4.2, 1.9, 3.6
+        elif strength_diff < -0.1:  # Away slight edge
+            home_odds, away_odds, draw_odds = 3.4, 2.3, 3.2
+        else:  # Very even
+            home_odds, away_odds, draw_odds = 2.9, 2.9, 3.0
         
-        # Calculate probabilities from estimated odds
-        features['home_win_probability'] = 1 / home_odds
+        # Calculate weighted probabilities
+        features['home_win_probability'] = (1 / home_odds) * FEATURE_WEIGHTS['recent_form']
         features['draw_probability'] = 1 / draw_odds
-        features['away_win_probability'] = 1 / away_odds
+        features['away_win_probability'] = (1 / away_odds) * FEATURE_WEIGHTS['recent_form']
         features['total_probability'] = features['home_win_probability'] + features['draw_probability'] + features['away_win_probability']
         features['bookmaker_margin'] = (features['total_probability'] - 1) * 100
         
-        # Goals betting odds estimates
-        expected_goals = home_xg + away_xg
-        if expected_goals > 2.8:
-            over25_odds = 1.6
-        elif expected_goals > 2.3:
-            over25_odds = 1.9
+        # GOALS BETTING with weights
+        total_expected_goals = (home_xg + away_xg) * FEATURE_WEIGHTS['attacking']
+        
+        if total_expected_goals > 3.2:
+            over25_odds = 1.5
+        elif total_expected_goals > 2.8:
+            over25_odds = 1.7
+        elif total_expected_goals > 2.4:
+            over25_odds = 2.0
         else:
-            over25_odds = 2.3
+            over25_odds = 2.5
         
         features['over_2.5_probability'] = 1 / over25_odds
         
-        # BTTS probability
-        btts_likelihood = min(home_xg, 2.0) * min(away_xg, 2.0) / 4.0  # Both teams likely to score
-        features['btts_probability'] = max(0.3, min(0.8, btts_likelihood))
+        # BTTS probability with defensive consideration
+        home_defense_strength = 2.0 / max(0.5, home_stats.get('goals_against_per_game', 1.0))
+        away_defense_strength = 2.0 / max(0.5, away_stats.get('goals_against_per_game', 1.0))
+        
+        btts_likelihood = (
+            min(home_xg, 2.0) * min(away_xg, 2.0) / 4.0 *
+            FEATURE_WEIGHTS['attacking'] / 
+            ((home_defense_strength + away_defense_strength) / 2 * FEATURE_WEIGHTS['defensive'])
+        )
+        features['btts_probability'] = max(0.25, min(0.85, btts_likelihood))
         
         # Game week
         features['Game Week'] = game_week
@@ -287,7 +316,7 @@ class FutureGamePredictor:
                 predictions['predictions']['btts_prob'] = round(btts_prob, 3)
                 predictions['predictions']['btts_no_prob'] = round(1 - btts_prob, 3)
             
-            # Predict individual team goals
+            # Predict individual team goals - UPDATED VERSION
             self.predict_team_goals(predictions, home_team, away_team)
             
             # Generate betting recommendations
@@ -359,69 +388,106 @@ class FutureGamePredictor:
         predictions['betting_recommendations'] = recommendations
     
     def predict_team_goals(self, predictions, home_team, away_team):
-        """Predict individual team goal counts"""
+        """Predict individual team goal counts - UPDATED WITH BETTER FORMULAS"""
         
         # Get team stats for goal predictions
         home_stats = self.team_stats.get(home_team, {'goals_per_game': 1.2})
         away_stats = self.team_stats.get(away_team, {'goals_per_game': 1.2, 'goals_against_per_game': 1.2})
         
-        # Base prediction on team scoring/defensive averages
+        # IMPROVED FORMULA WEIGHTS - Adjust these values to change predictions
+        home_attack_weight = 0.6    # How much home team's attack matters
+        away_defense_weight = 0.4   # How much away team's defense matters
+        away_attack_weight = 0.6    # How much away team's attack matters  
+        home_defense_weight = 0.4   # How much home team's defense matters
+        
+        # Base stats
         home_attack = home_stats.get('goals_per_game', 1.2)
         away_defense = away_stats.get('goals_against_per_game', 1.2)
         away_attack = away_stats.get('goals_per_game', 1.2)
         home_defense = home_stats.get('goals_against_per_game', 1.2)
         
-        # Adjust for home advantage (typically +0.2-0.3 goals)
-        home_advantage = 0.25
+        # ADJUSTABLE HOME ADVANTAGE - Change this value
+        home_advantage = 0.35  # Increase for more home bias, decrease for less
         
-        # Predict expected goals for each team
-        # Home team: their attack vs away defense + home advantage
-        home_expected_goals = (home_attack + away_defense) / 2 + home_advantage
+        # IMPROVED GOAL PREDICTION FORMULAS
+        # Home team expected goals - weighted combination
+        home_expected_goals = (
+            (home_attack * home_attack_weight) + 
+            ((2.5 - away_defense) * away_defense_weight)  # 2.5 is league average
+        ) + home_advantage
         
-        # Away team: their attack vs home defense
-        away_expected_goals = (away_attack + home_defense) / 2
+        # Away team expected goals - weighted combination  
+        away_expected_goals = (
+            (away_attack * away_attack_weight) +
+            ((2.5 - home_defense) * home_defense_weight)  # 2.5 is league average
+        )
         
-        # Apply some realistic bounds (teams rarely score 5+ goals)
-        home_expected_goals = max(0.3, min(4.0, home_expected_goals))
-        away_expected_goals = max(0.3, min(4.0, away_expected_goals))
+        # FORM ADJUSTMENT - recent form impact
+        form_impact = 0.2  # How much recent form affects predictions (0-1)
         
-        # Use simple rounding for most likely goal count (fallback if scipy not available)
-        try:
-            from scipy.stats import poisson
-            # Get most likely goal count (mode of Poisson distribution)
-            home_predicted_goals = int(round(home_expected_goals))
-            away_predicted_goals = int(round(away_expected_goals))
-        except ImportError:
-            # Fallback: simple rounding
-            home_predicted_goals = int(round(home_expected_goals))
-            away_predicted_goals = int(round(away_expected_goals))
+        if 'ppg' in home_stats and 'ppg' in away_stats:
+            home_form = (home_stats['ppg'] - 1.5) * form_impact  # 1.5 is average PPG
+            away_form = (away_stats['ppg'] - 1.5) * form_impact
+            
+            home_expected_goals += home_form
+            away_expected_goals += away_form
         
-        # If we have outcome predictions, adjust based on who's more likely to win
+        # LEAGUE CONTEXT ADJUSTMENT
+        league_avg_goals = 2.6  # Serie A average goals per match
+        total_expected = home_expected_goals + away_expected_goals
+        
+        # Scale to realistic range if too high/low
+        if total_expected > 4.5:  # Too high
+            scaling_factor = 4.5 / total_expected
+            home_expected_goals *= scaling_factor
+            away_expected_goals *= scaling_factor
+        elif total_expected < 1.5:  # Too low
+            scaling_factor = 1.5 / total_expected  
+            home_expected_goals *= scaling_factor
+            away_expected_goals *= scaling_factor
+        
+        # Apply realistic bounds per team
+        home_expected_goals = max(0.3, min(3.5, home_expected_goals))
+        away_expected_goals = max(0.3, min(3.5, away_expected_goals))
+        
+        # Convert to most likely goal counts
+        home_predicted_goals = int(round(home_expected_goals))
+        away_predicted_goals = int(round(away_expected_goals))
+        
+        # OUTCOME-BASED ADJUSTMENT - If we know the likely winner, adjust goals
         if 'most_likely' in predictions['predictions']:
+            outcome_adjustment = 0.3  # How much to adjust based on predicted winner
+            
             if predictions['predictions']['most_likely'] == 'Home Win':
-                # If home is favored, slightly increase their goals
+                # If home is predicted to win, ensure they score more
                 if home_predicted_goals <= away_predicted_goals:
                     home_predicted_goals = away_predicted_goals + 1
+                # Slight boost to home xG
+                home_expected_goals += outcome_adjustment
+                    
             elif predictions['predictions']['most_likely'] == 'Away Win':
-                # If away is favored, slightly increase their goals
+                # If away is predicted to win, ensure they score more
                 if away_predicted_goals <= home_predicted_goals:
                     away_predicted_goals = home_predicted_goals + 1
-            # For draws, keep goals close
+                # Slight boost to away xG
+                away_expected_goals += outcome_adjustment
+                    
             elif predictions['predictions']['most_likely'] == 'Draw':
-                # Make goals equal or very close
-                avg_goals = (home_predicted_goals + away_predicted_goals) / 2
-                if avg_goals < 1:
-                    home_predicted_goals = away_predicted_goals = 1
-                else:
-                    home_predicted_goals = away_predicted_goals = int(round(avg_goals))
+                # For draws, make goals closer
+                goal_diff = abs(home_predicted_goals - away_predicted_goals)
+                if goal_diff > 1:
+                    avg_goals = (home_predicted_goals + away_predicted_goals) / 2
+                    home_predicted_goals = int(round(avg_goals))
+                    away_predicted_goals = int(round(avg_goals))
         
-        # Store predictions
+        # Store predictions with better precision
         predictions['predictions']['home_predicted_goals'] = home_predicted_goals
         predictions['predictions']['away_predicted_goals'] = away_predicted_goals
         predictions['predictions']['home_expected_goals'] = round(home_expected_goals, 2)
         predictions['predictions']['away_expected_goals'] = round(away_expected_goals, 2)
         predictions['predictions']['predicted_score'] = f"{home_predicted_goals}-{away_predicted_goals}"
         predictions['predictions']['total_predicted_goals'] = home_predicted_goals + away_predicted_goals
+        predictions['predictions']['total_expected_goals'] = round(home_expected_goals + away_expected_goals, 2)
     
     def predict_multiple_matches(self, matches_list):
         """Predict multiple matches at once"""
