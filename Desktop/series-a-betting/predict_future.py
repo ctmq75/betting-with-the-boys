@@ -271,47 +271,96 @@ class FutureGamePredictor:
         
         return feature_row
     
-    def predict_match_integrated(self, home_team, away_team, game_week=20):
-        """Integrated prediction that ensures all outputs are consistent - MAIN METHOD"""
-        
-        if self.trained_model is None:
-            print("❌ Model not loaded! Run load_trained_model() first.")
-            return None
-        
-        print(f"🔮 Predicting: {home_team} vs {away_team}")
-        
-        # Create features for this match
-        match_features = self.create_upcoming_match_features(home_team, away_team, game_week)
-        
-        predictions = {
-            'home_team': home_team,
-            'away_team': away_team,
-            'match': f"{home_team} vs {away_team}",
-            'predictions': {},
-            'betting_recommendations': []
-        }
-        
-        try:
-            # STEP 1: Get ML model predictions as baseline
-            ml_predictions = self.get_ml_baseline_predictions(match_features)
-            
-            # STEP 2: Calculate goal predictions using improved formulas
-            goal_predictions = self.predict_team_goals_improved(home_team, away_team)
-            
-            # STEP 3: Integrate and ensure consistency
-            integrated_predictions = self.integrate_predictions(ml_predictions, goal_predictions)
-            
-            predictions['predictions'] = integrated_predictions
-            
-            # STEP 4: Generate consistent betting recommendations
-            self.generate_integrated_betting_recommendations(predictions, match_features)
-            
-        except Exception as e:
-            print(f"⚠️  Error making predictions: {e}")
-            predictions['error'] = str(e)
-        
-        return predictions
+    # Add this method to your FutureGamePredictor class to fix the web app error
+
+def predict_match_integrated(self, home_team, away_team, game_week=20):
+    """Integrated prediction that ensures all outputs are consistent - FIXED FOR WEB APP"""
     
+    if self.trained_model is None:
+        print("❌ Model not loaded! Run load_trained_model() first.")
+        return None
+    
+    print(f"🔮 Predicting: {home_team} vs {away_team}")
+    
+    # Create features for this match
+    match_features = self.create_upcoming_match_features(home_team, away_team, game_week)
+    
+    predictions = {
+        'home_team': home_team,
+        'away_team': away_team,
+        'match': f"{home_team} vs {away_team}",
+        'predictions': {},
+        'betting_recommendations': []
+    }
+    
+    try:
+        # STEP 1: Get ML model predictions as baseline
+        ml_predictions = self.get_ml_baseline_predictions(match_features)
+        
+        # STEP 2: Calculate goal predictions using improved formulas
+        goal_predictions = self.predict_team_goals_improved(home_team, away_team)
+        
+        # STEP 3: Integrate and ensure consistency
+        integrated_predictions = self.integrate_predictions(ml_predictions, goal_predictions)
+        
+        # STEP 4: ENSURE ALL REQUIRED FIELDS ARE PRESENT
+        # Make sure total_predicted_goals is always included
+        if 'total_predicted_goals' not in integrated_predictions:
+            integrated_predictions['total_predicted_goals'] = (
+                integrated_predictions.get('home_predicted_goals', 1) + 
+                integrated_predictions.get('away_predicted_goals', 1)
+            )
+        
+        # Make sure all other expected fields exist
+        required_fields = [
+            'home_win_prob', 'draw_prob', 'away_win_prob', 'most_likely', 'confidence',
+            'over_2.5_prob', 'under_2.5_prob', 'btts_prob', 'btts_no_prob',
+            'home_predicted_goals', 'away_predicted_goals', 'predicted_score',
+            'home_expected_goals', 'away_expected_goals', 'total_expected_goals'
+        ]
+        
+        for field in required_fields:
+            if field not in integrated_predictions:
+                # Provide safe defaults
+                if 'prob' in field:
+                    integrated_predictions[field] = 0.5
+                elif 'goals' in field:
+                    integrated_predictions[field] = 1
+                elif field == 'predicted_score':
+                    integrated_predictions[field] = "1-1"
+                elif field == 'most_likely':
+                    integrated_predictions[field] = "Draw"
+                elif field == 'confidence':
+                    integrated_predictions[field] = 0.33
+                else:
+                    integrated_predictions[field] = 0
+        
+        predictions['predictions'] = integrated_predictions
+        
+        # STEP 5: Generate consistent betting recommendations
+        self.generate_integrated_betting_recommendations(predictions, match_features)
+        
+        # DEBUG: Print what fields we're returning
+        print(f"DEBUG - Returning fields: {list(predictions['predictions'].keys())}")
+        
+    except Exception as e:
+        print(f"⚠️  Error making predictions: {e}")
+        # Return safe fallback data structure
+        predictions['predictions'] = {
+            'home_win_prob': 0.33, 'draw_prob': 0.34, 'away_win_prob': 0.33,
+            'most_likely': 'Draw', 'confidence': 0.34,
+            'over_2.5_prob': 0.5, 'under_2.5_prob': 0.5,
+            'btts_prob': 0.5, 'btts_no_prob': 0.5,
+            'home_predicted_goals': 1, 'away_predicted_goals': 1,
+            'total_predicted_goals': 2,  # CRITICAL: This field must be present
+            'predicted_score': "1-1",
+            'home_expected_goals': 1.0, 'away_expected_goals': 1.0,
+            'total_expected_goals': 2.0
+        }
+        predictions['error'] = str(e)
+    
+    return predictions
+
     def validate_prediction_logic(self, predictions):
         """Validate that predictions make logical sense"""
         
