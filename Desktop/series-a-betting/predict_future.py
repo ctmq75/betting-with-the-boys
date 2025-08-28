@@ -342,105 +342,105 @@ class FutureGamePredictor:
         
         return ml_preds
     
-    def predict_team_goals_improved(self, home_team, away_team):
-        """Improved goal prediction with better integration - NEW METHOD"""
-        
-        # Get team stats
-        home_stats = self.team_stats.get(home_team, {'goals_per_game': 1.2, 'goals_against_per_game': 1.2, 'ppg': 1.5})
-        away_stats = self.team_stats.get(away_team, {'goals_per_game': 1.2, 'goals_against_per_game': 1.2, 'ppg': 1.5})
-        
-        # IMPROVED FORMULA WEIGHTS
-        home_attack_weight = 0.6
-        away_defense_weight = 0.4  
-        away_attack_weight = 0.6
-        home_defense_weight = 0.4
-        home_advantage = 0.35
-        
-        # Base expected goals calculation
-        home_attack = home_stats.get('goals_per_game', 1.2)
-        away_defense = away_stats.get('goals_against_per_game', 1.2) 
-        away_attack = away_stats.get('goals_per_game', 1.2)
-        home_defense = home_stats.get('goals_against_per_game', 1.2)
-        
-        # Expected goals with weights
-        home_expected_goals = (
-            (home_attack * home_attack_weight) + 
-            ((2.5 - away_defense) * away_defense_weight)
-        ) + home_advantage
-        
-        away_expected_goals = (
-            (away_attack * away_attack_weight) +
-            ((2.5 - home_defense) * home_defense_weight)
-        )
-        
-        # Form adjustment
-        form_impact = 0.2
-        if 'ppg' in home_stats and 'ppg' in away_stats:
-            home_form = (home_stats['ppg'] - 1.5) * form_impact
-            away_form = (away_stats['ppg'] - 1.5) * form_impact
-            home_expected_goals += home_form
-            away_expected_goals += away_form
-        
-        # Apply realistic bounds
-        home_expected_goals = max(0.3, min(3.5, home_expected_goals))
-        away_expected_goals = max(0.3, min(3.5, away_expected_goals))
-        
-        # Calculate goal-based probabilities
-        total_xg = home_expected_goals + away_expected_goals
-        
-        # CONSISTENT OUTCOME PROBABILITIES based on goal difference
-        goal_diff = home_expected_goals - away_expected_goals
-        
-        if goal_diff > 0.8:  # Home strong advantage
-            home_win_prob = 0.65
-            draw_prob = 0.20  
-            away_win_prob = 0.15
-        elif goal_diff > 0.3:  # Home slight advantage
-            home_win_prob = 0.50
-            draw_prob = 0.30
-            away_win_prob = 0.20
-        elif goal_diff < -0.8:  # Away strong advantage  
-            home_win_prob = 0.15
-            draw_prob = 0.20
-            away_win_prob = 0.65
-        elif goal_diff < -0.3:  # Away slight advantage
-            home_win_prob = 0.20  
-            draw_prob = 0.30
-            away_win_prob = 0.50
-        else:  # Even match
-            home_win_prob = 0.35
-            draw_prob = 0.30
-            away_win_prob = 0.35
-        
-        # CONSISTENT OVER/UNDER based on total expected goals
-        if total_xg >= 3.5:
-            over_2_5_prob = 0.85
-        elif total_xg >= 3.0:  
-            over_2_5_prob = 0.70
-        elif total_xg >= 2.5:
-            over_2_5_prob = 0.55
-        elif total_xg >= 2.0:
-            over_2_5_prob = 0.40
-        else:
-            over_2_5_prob = 0.25
-        
-        # CONSISTENT BTTS based on both teams' expected goals
-        btts_prob = min(0.9, max(0.1, 
-            (min(home_expected_goals, 2.0) * min(away_expected_goals, 2.0)) / 4.0
-        ))
-        
-        return {
-            'home_expected_goals': round(home_expected_goals, 2),
-            'away_expected_goals': round(away_expected_goals, 2), 
-            'total_expected_goals': round(total_xg, 2),
-            'home_predicted_goals': int(round(home_expected_goals)),
-            'away_predicted_goals': int(round(away_expected_goals)),
-            'goal_based_home_win_prob': home_win_prob,
-            'goal_based_draw_prob': draw_prob, 
-            'goal_based_away_win_prob': away_win_prob,
-            'goal_based_over_2_5_prob': over_2_5_prob,
-            'goal_based_btts_prob': btts_prob
-        }
+def predict_team_goals_improved(self, home_team, away_team):
+    """Improved goal prediction with REALISTIC scoring - FIXED VERSION"""
+    
+    # Get team stats
+    home_stats = self.team_stats.get(home_team, {'goals_per_game': 1.2, 'goals_against_per_game': 1.2, 'ppg': 1.5})
+    away_stats = self.team_stats.get(away_team, {'goals_per_game': 1.2, 'goals_against_per_game': 1.2, 'ppg': 1.5})
+    
+    # REALISTIC FORMULA WEIGHTS - Much more conservative
+    home_attack_weight = 0.8    # Increased to use more of actual stats
+    away_defense_weight = 0.2   # Reduced defense impact  
+    away_attack_weight = 0.8    # Increased to use more of actual stats
+    home_defense_weight = 0.2   # Reduced defense impact
+    home_advantage = 0.15       # Reduced from 0.35 to 0.15
+    
+    # Base expected goals calculation - USE RAW STATS
+    home_attack = home_stats.get('goals_per_game', 1.2)
+    away_defense = away_stats.get('goals_against_per_game', 1.2) 
+    away_attack = away_stats.get('goals_per_game', 1.2)
+    home_defense = home_stats.get('goals_against_per_game', 1.2)
+    
+    # REALISTIC EXPECTED GOALS - Closer to actual team performance
+    home_expected_goals = (
+        (home_attack * home_attack_weight) + 
+        ((1.8 - away_defense) * away_defense_weight)  # Reduced from 2.5 to 1.8
+    ) + home_advantage
+    
+    away_expected_goals = (
+        (away_attack * away_attack_weight) +
+        ((1.8 - home_defense) * home_defense_weight)  # Reduced from 2.5 to 1.8
+    )
+    
+    # MINIMAL form adjustment
+    form_impact = 0.08  # Reduced from 0.2 to 0.08
+    if 'ppg' in home_stats and 'ppg' in away_stats:
+        home_form = (home_stats['ppg'] - 1.5) * form_impact
+        away_form = (away_stats['ppg'] - 1.5) * form_impact
+        home_expected_goals += home_form
+        away_expected_goals += away_form
+    
+    # TIGHT realistic bounds
+    home_expected_goals = max(0.3, min(2.5, home_expected_goals))  # Max reduced to 2.5
+    away_expected_goals = max(0.3, min(2.5, away_expected_goals))  # Max reduced to 2.5
+    
+    # Calculate goal-based probabilities
+    total_xg = home_expected_goals + away_expected_goals
+    
+    # REALISTIC OUTCOME PROBABILITIES
+    goal_diff = home_expected_goals - away_expected_goals
+    
+    if goal_diff > 0.5:
+        home_win_prob = 0.55
+        draw_prob = 0.25  
+        away_win_prob = 0.20
+    elif goal_diff > 0.2:
+        home_win_prob = 0.42
+        draw_prob = 0.33
+        away_win_prob = 0.25
+    elif goal_diff < -0.5:
+        home_win_prob = 0.20
+        draw_prob = 0.25
+        away_win_prob = 0.55
+    elif goal_diff < -0.2:
+        home_win_prob = 0.25  
+        draw_prob = 0.33
+        away_win_prob = 0.42
+    else:  # Even match
+        home_win_prob = 0.33
+        draw_prob = 0.34
+        away_win_prob = 0.33
+    
+    # REALISTIC OVER/UNDER
+    if total_xg >= 3.0:
+        over_2_5_prob = 0.70
+    elif total_xg >= 2.5:  
+        over_2_5_prob = 0.55
+    elif total_xg >= 2.0:
+        over_2_5_prob = 0.40
+    elif total_xg >= 1.5:
+        over_2_5_prob = 0.25
+    else:
+        over_2_5_prob = 0.15
+    
+    # REALISTIC BTTS
+    btts_prob = min(0.80, max(0.15, 
+        (min(home_expected_goals, 1.5) * min(away_expected_goals, 1.5)) / 2.25
+    ))
+    
+    return {
+        'home_expected_goals': round(home_expected_goals, 2),
+        'away_expected_goals': round(away_expected_goals, 2), 
+        'total_expected_goals': round(total_xg, 2),
+        'home_predicted_goals': int(round(home_expected_goals)),
+        'away_predicted_goals': int(round(away_expected_goals)),
+        'goal_based_home_win_prob': home_win_prob,
+        'goal_based_draw_prob': draw_prob, 
+        'goal_based_away_win_prob': away_win_prob,
+        'goal_based_over_2_5_prob': over_2_5_prob,
+        'goal_based_btts_prob': btts_prob
+    }
     
     def integrate_predictions(self, ml_predictions, goal_predictions):
         """Integrate ML and goal-based predictions with consistency checks - NEW METHOD"""
