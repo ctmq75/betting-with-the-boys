@@ -1,5 +1,5 @@
 """
-Serie A Future Game Predictor - FULLY INTEGRATED VERSION
+Serie A Future Game Predictor - COMPLETE FIXED VERSION
 Predicts outcomes for upcoming matches using trained models
 Enhanced with improved goal prediction formulas and consistent integration
 All predictions are now logically consistent across different bet types
@@ -272,7 +272,7 @@ class FutureGamePredictor:
         return feature_row
     
     def predict_match_integrated(self, home_team, away_team, game_week=20):
-        """Integrated prediction that ensures all outputs are consistent - NEW METHOD"""
+        """Integrated prediction that ensures all outputs are consistent - MAIN METHOD"""
         
         if self.trained_model is None:
             print("❌ Model not loaded! Run load_trained_model() first.")
@@ -312,258 +312,8 @@ class FutureGamePredictor:
         
         return predictions
     
-    def get_ml_baseline_predictions(self, match_features):
-        """Get baseline predictions from trained ML models - NEW METHOD"""
-        ml_preds = {}
-        
-        try:
-            # Outcome prediction (1X2)
-            if 'outcome_rf' in self.trained_model.models:
-                outcome_probs = self.trained_model.models['outcome_rf'].predict_proba(match_features)[0]
-                ml_preds['ml_home_win_prob'] = outcome_probs[0]
-                ml_preds['ml_draw_prob'] = outcome_probs[1] 
-                ml_preds['ml_away_win_prob'] = outcome_probs[2]
-            
-            # Goals predictions
-            if 'over_2.5_rf' in self.trained_model.models:
-                ml_preds['ml_over_2.5_prob'] = self.trained_model.models['over_2.5_rf'].predict_proba(match_features)[0][1]
-            
-            # BTTS prediction  
-            if 'btts_rf' in self.trained_model.models:
-                ml_preds['ml_btts_prob'] = self.trained_model.models['btts_rf'].predict_proba(match_features)[0][1]
-                
-        except Exception as e:
-            print(f"⚠️  ML prediction error: {e}")
-            # Fallback to neutral probabilities
-            ml_preds = {
-                'ml_home_win_prob': 0.4, 'ml_draw_prob': 0.3, 'ml_away_win_prob': 0.3,
-                'ml_over_2.5_prob': 0.5, 'ml_btts_prob': 0.5
-            }
-        
-        return ml_preds
-    
-def predict_team_goals_improved(self, home_team, away_team):
-    """Improved goal prediction with REALISTIC scoring - FIXED VERSION"""
-    
-    # Get team stats
-    home_stats = self.team_stats.get(home_team, {'goals_per_game': 1.2, 'goals_against_per_game': 1.2, 'ppg': 1.5})
-    away_stats = self.team_stats.get(away_team, {'goals_per_game': 1.2, 'goals_against_per_game': 1.2, 'ppg': 1.5})
-    
-    # REALISTIC FORMULA WEIGHTS - Much more conservative
-    home_attack_weight = 0.8    # Increased to use more of actual stats
-    away_defense_weight = 0.2   # Reduced defense impact  
-    away_attack_weight = 0.8    # Increased to use more of actual stats
-    home_defense_weight = 0.2   # Reduced defense impact
-    home_advantage = 0.15       # Reduced from 0.35 to 0.15
-    
-    # Base expected goals calculation - USE RAW STATS
-    home_attack = home_stats.get('goals_per_game', 1.2)
-    away_defense = away_stats.get('goals_against_per_game', 1.2) 
-    away_attack = away_stats.get('goals_per_game', 1.2)
-    home_defense = home_stats.get('goals_against_per_game', 1.2)
-    
-    # REALISTIC EXPECTED GOALS - Closer to actual team performance
-    home_expected_goals = (
-        (home_attack * home_attack_weight) + 
-        ((1.8 - away_defense) * away_defense_weight)  # Reduced from 2.5 to 1.8
-    ) + home_advantage
-    
-    away_expected_goals = (
-        (away_attack * away_attack_weight) +
-        ((1.8 - home_defense) * home_defense_weight)  # Reduced from 2.5 to 1.8
-    )
-    
-    # MINIMAL form adjustment
-    form_impact = 0.08  # Reduced from 0.2 to 0.08
-    if 'ppg' in home_stats and 'ppg' in away_stats:
-        home_form = (home_stats['ppg'] - 1.5) * form_impact
-        away_form = (away_stats['ppg'] - 1.5) * form_impact
-        home_expected_goals += home_form
-        away_expected_goals += away_form
-    
-    # TIGHT realistic bounds
-    home_expected_goals = max(0.3, min(2.5, home_expected_goals))  # Max reduced to 2.5
-    away_expected_goals = max(0.3, min(2.5, away_expected_goals))  # Max reduced to 2.5
-    
-    # Calculate goal-based probabilities
-    total_xg = home_expected_goals + away_expected_goals
-    
-    # REALISTIC OUTCOME PROBABILITIES
-    goal_diff = home_expected_goals - away_expected_goals
-    
-    if goal_diff > 0.5:
-        home_win_prob = 0.55
-        draw_prob = 0.25  
-        away_win_prob = 0.20
-    elif goal_diff > 0.2:
-        home_win_prob = 0.42
-        draw_prob = 0.33
-        away_win_prob = 0.25
-    elif goal_diff < -0.5:
-        home_win_prob = 0.20
-        draw_prob = 0.25
-        away_win_prob = 0.55
-    elif goal_diff < -0.2:
-        home_win_prob = 0.25  
-        draw_prob = 0.33
-        away_win_prob = 0.42
-    else:  # Even match
-        home_win_prob = 0.33
-        draw_prob = 0.34
-        away_win_prob = 0.33
-    
-    # REALISTIC OVER/UNDER
-    if total_xg >= 3.0:
-        over_2_5_prob = 0.70
-    elif total_xg >= 2.5:  
-        over_2_5_prob = 0.55
-    elif total_xg >= 2.0:
-        over_2_5_prob = 0.40
-    elif total_xg >= 1.5:
-        over_2_5_prob = 0.25
-    else:
-        over_2_5_prob = 0.15
-    
-    # REALISTIC BTTS
-    btts_prob = min(0.80, max(0.15, 
-        (min(home_expected_goals, 1.5) * min(away_expected_goals, 1.5)) / 2.25
-    ))
-    
-    return {
-        'home_expected_goals': round(home_expected_goals, 2),
-        'away_expected_goals': round(away_expected_goals, 2), 
-        'total_expected_goals': round(total_xg, 2),
-        'home_predicted_goals': int(round(home_expected_goals)),
-        'away_predicted_goals': int(round(away_expected_goals)),
-        'goal_based_home_win_prob': home_win_prob,
-        'goal_based_draw_prob': draw_prob, 
-        'goal_based_away_win_prob': away_win_prob,
-        'goal_based_over_2_5_prob': over_2_5_prob,
-        'goal_based_btts_prob': btts_prob
-    }
-    
-    def integrate_predictions(self, ml_predictions, goal_predictions):
-        """Integrate ML and goal-based predictions with consistency checks - NEW METHOD"""
-        
-        # BLENDING WEIGHTS - adjust these to balance ML vs goal-based predictions
-        ML_WEIGHT = 0.4      # How much to trust the ML models
-        GOAL_WEIGHT = 0.6    # How much to trust the goal-based calculations
-        
-        integrated = {}
-        
-        # Blend outcome probabilities
-        integrated['home_win_prob'] = round(
-            (ml_predictions.get('ml_home_win_prob', 0.33) * ML_WEIGHT) + 
-            (goal_predictions['goal_based_home_win_prob'] * GOAL_WEIGHT), 3
-        )
-        
-        integrated['draw_prob'] = round(
-            (ml_predictions.get('ml_draw_prob', 0.33) * ML_WEIGHT) + 
-            (goal_predictions['goal_based_draw_prob'] * GOAL_WEIGHT), 3
-        )
-        
-        integrated['away_win_prob'] = round(
-            (ml_predictions.get('ml_away_win_prob', 0.33) * ML_WEIGHT) + 
-            (goal_predictions['goal_based_away_win_prob'] * GOAL_WEIGHT), 3
-        )
-        
-        # Normalize probabilities to sum to 1.0
-        total_prob = integrated['home_win_prob'] + integrated['draw_prob'] + integrated['away_win_prob']
-        integrated['home_win_prob'] = round(integrated['home_win_prob'] / total_prob, 3)
-        integrated['draw_prob'] = round(integrated['draw_prob'] / total_prob, 3) 
-        integrated['away_win_prob'] = round(integrated['away_win_prob'] / total_prob, 3)
-        
-        # Determine most likely outcome
-        outcome_probs = [integrated['home_win_prob'], integrated['draw_prob'], integrated['away_win_prob']]
-        most_likely_idx = np.argmax(outcome_probs)
-        outcomes = ['Home Win', 'Draw', 'Away Win']
-        integrated['most_likely'] = outcomes[most_likely_idx]
-        integrated['confidence'] = round(outcome_probs[most_likely_idx], 3)
-        
-        # Blend over/under probabilities
-        integrated['over_2.5_prob'] = round(
-            (ml_predictions.get('ml_over_2_5_prob', 0.5) * ML_WEIGHT) + 
-            (goal_predictions['goal_based_over_2_5_prob'] * GOAL_WEIGHT), 3
-        )
-        integrated['under_2.5_prob'] = round(1 - integrated['over_2.5_prob'], 3)
-        
-        # Blend BTTS probabilities  
-        integrated['btts_prob'] = round(
-            (ml_predictions.get('ml_btts_prob', 0.5) * ML_WEIGHT) + 
-            (goal_predictions['goal_based_btts_prob'] * GOAL_WEIGHT), 3
-        )
-        integrated['btts_no_prob'] = round(1 - integrated['btts_prob'], 3)
-        
-        # Add goal predictions
-        integrated['home_predicted_goals'] = goal_predictions['home_predicted_goals']
-        integrated['away_predicted_goals'] = goal_predictions['away_predicted_goals'] 
-        integrated['predicted_score'] = f"{goal_predictions['home_predicted_goals']}-{goal_predictions['away_predicted_goals']}"
-        integrated['home_expected_goals'] = goal_predictions['home_expected_goals']
-        integrated['away_expected_goals'] = goal_predictions['away_expected_goals']
-        integrated['total_expected_goals'] = goal_predictions['total_expected_goals']
-        integrated['total_predicted_goals'] = goal_predictions['home_predicted_goals'] + goal_predictions['away_predicted_goals']
-        
-        # CONSISTENCY CHECKS - Fix obvious contradictions
-        integrated = self.apply_consistency_checks(integrated)
-        
-        return integrated
-    
-    def apply_consistency_checks(self, predictions):
-        """Apply logic checks to ensure predictions make sense - NEW METHOD"""
-        
-        # Check 1: If predicted score is over 2.5, over 2.5 probability should be high
-        if predictions['total_predicted_goals'] >= 3:
-            predictions['over_2.5_prob'] = max(0.75, predictions['over_2.5_prob'])
-            predictions['under_2.5_prob'] = 1 - predictions['over_2.5_prob']
-            print(f"✅ Consistency fix: Predicted {predictions['total_predicted_goals']} goals, boosted Over 2.5 to {predictions['over_2.5_prob']:.1%}")
-        
-        # Check 2: If both teams predicted to score, BTTS should be high
-        if predictions['home_predicted_goals'] > 0 and predictions['away_predicted_goals'] > 0:
-            predictions['btts_prob'] = max(0.65, predictions['btts_prob'])
-            predictions['btts_no_prob'] = 1 - predictions['btts_prob']
-            print(f"✅ Consistency fix: Both teams score in prediction, boosted BTTS to {predictions['btts_prob']:.1%}")
-        
-        # Check 3: If one team predicted to score 0, BTTS should be low  
-        elif predictions['home_predicted_goals'] == 0 or predictions['away_predicted_goals'] == 0:
-            predictions['btts_prob'] = min(0.35, predictions['btts_prob'])
-            predictions['btts_no_prob'] = 1 - predictions['btts_prob']
-            print(f"✅ Consistency fix: Clean sheet predicted, reduced BTTS to {predictions['btts_prob']:.1%}")
-        
-        # Check 4: Outcome probabilities should match predicted score
-        home_goals = predictions['home_predicted_goals']
-        away_goals = predictions['away_predicted_goals']
-        
-        if home_goals > away_goals:  # Home win predicted
-            if predictions['most_likely'] != 'Home Win':
-                print(f"✅ Consistency fix: Score predicts home win ({home_goals}-{away_goals}), adjusting outcome")
-                predictions['home_win_prob'] = max(0.6, predictions['home_win_prob'])
-                predictions['most_likely'] = 'Home Win'
-                predictions['confidence'] = predictions['home_win_prob']
-                
-        elif away_goals > home_goals:  # Away win predicted  
-            if predictions['most_likely'] != 'Away Win':
-                print(f"✅ Consistency fix: Score predicts away win ({home_goals}-{away_goals}), adjusting outcome")
-                predictions['away_win_prob'] = max(0.6, predictions['away_win_prob']) 
-                predictions['most_likely'] = 'Away Win'
-                predictions['confidence'] = predictions['away_win_prob']
-                
-        else:  # Draw predicted
-            if predictions['most_likely'] != 'Draw':
-                print(f"✅ Consistency fix: Score predicts draw ({home_goals}-{away_goals}), adjusting outcome")
-                predictions['draw_prob'] = max(0.5, predictions['draw_prob'])
-                predictions['most_likely'] = 'Draw' 
-                predictions['confidence'] = predictions['draw_prob']
-        
-        # Re-normalize outcome probabilities after adjustments
-        total = predictions['home_win_prob'] + predictions['draw_prob'] + predictions['away_win_prob']
-        predictions['home_win_prob'] = round(predictions['home_win_prob'] / total, 3)
-        predictions['draw_prob'] = round(predictions['draw_prob'] / total, 3)
-        predictions['away_win_prob'] = round(predictions['away_win_prob'] / total, 3)
-        
-        return predictions
-    
     def validate_prediction_logic(self, predictions):
-        """Validate that predictions make logical sense - NEW METHOD"""
+        """Validate that predictions make logical sense"""
         
         preds = predictions['predictions']
         issues = []
@@ -610,6 +360,107 @@ def predict_team_goals_improved(self, home_team, away_team):
             print("✅ Prediction validation passed - all logic consistent")
         
         return len(issues) == 0
+    
+    def generate_integrated_betting_recommendations(self, predictions, match_features, confidence_threshold=0.65):
+        """Generate betting recommendations for integrated predictions"""
+        
+        preds = predictions['predictions']
+        recommendations = []
+        
+        # Check outcome betting with higher confidence threshold
+        if 'confidence' in preds and preds['confidence'] >= confidence_threshold:
+            if preds['most_likely'] == 'Home Win' and preds['home_win_prob'] >= confidence_threshold:
+                recommendations.append({
+                    'bet_type': 'Home Win',
+                    'probability': preds['home_win_prob'],
+                    'confidence': preds['confidence'],
+                    'reasoning': f"Integrated model predicts {preds['home_win_prob']:.1%} chance of home win",
+                    'strength': 'High' if preds['confidence'] > 0.75 else 'Medium'
+                })
+            elif preds['most_likely'] == 'Away Win' and preds['away_win_prob'] >= confidence_threshold:
+                recommendations.append({
+                    'bet_type': 'Away Win',
+                    'probability': preds['away_win_prob'],
+                    'confidence': preds['confidence'],
+                    'reasoning': f"Integrated model predicts {preds['away_win_prob']:.1%} chance of away win",
+                    'strength': 'High' if preds['confidence'] > 0.75 else 'Medium'
+                })
+            elif preds['most_likely'] == 'Draw' and preds['draw_prob'] >= confidence_threshold:
+                recommendations.append({
+                    'bet_type': 'Draw',
+                    'probability': preds['draw_prob'],
+                    'confidence': preds['confidence'],
+                    'reasoning': f"Integrated model predicts {preds['draw_prob']:.1%} chance of draw",
+                    'strength': 'High' if preds['confidence'] > 0.75 else 'Medium'
+                })
+        
+        # Check goals betting with consistency
+        if 'over_2.5_prob' in preds:
+            if preds['over_2.5_prob'] >= confidence_threshold:
+                recommendations.append({
+                    'bet_type': 'Over 2.5 Goals',
+                    'probability': preds['over_2.5_prob'],
+                    'confidence': preds['over_2.5_prob'],
+                    'reasoning': f"Consistent prediction: {preds['total_predicted_goals']} goals expected, {preds['over_2.5_prob']:.1%} Over 2.5",
+                    'strength': 'High' if preds['over_2.5_prob'] > 0.8 else 'Medium'
+                })
+            elif preds['under_2.5_prob'] >= confidence_threshold:
+                recommendations.append({
+                    'bet_type': 'Under 2.5 Goals',
+                    'probability': preds['under_2.5_prob'],
+                    'confidence': preds['under_2.5_prob'],
+                    'reasoning': f"Consistent prediction: {preds['total_predicted_goals']} goals expected, {preds['under_2.5_prob']:.1%} Under 2.5",
+                    'strength': 'High' if preds['under_2.5_prob'] > 0.8 else 'Medium'
+                })
+        
+        # Check BTTS with consistency
+        if 'btts_prob' in preds:
+            if preds['btts_prob'] >= confidence_threshold:
+                recommendations.append({
+                    'bet_type': 'Both Teams To Score - Yes',
+                    'probability': preds['btts_prob'],
+                    'confidence': preds['btts_prob'],
+                    'reasoning': f"Consistent prediction: {preds['predicted_score']} score, {preds['btts_prob']:.1%} BTTS",
+                    'strength': 'High' if preds['btts_prob'] > 0.8 else 'Medium'
+                })
+            elif preds['btts_no_prob'] >= confidence_threshold:
+                recommendations.append({
+                    'bet_type': 'Both Teams To Score - No',
+                    'probability': preds['btts_no_prob'],
+                    'confidence': preds['btts_no_prob'],
+                    'reasoning': f"Consistent prediction: {preds['predicted_score']} score, {preds['btts_no_prob']:.1%} No BTTS",
+                    'strength': 'High' if preds['btts_no_prob'] > 0.8 else 'Medium'
+                })
+        
+        predictions['betting_recommendations'] = recommendations
+    
+    def predict_multiple_matches(self, matches_list, use_integrated=True):
+        """Predict multiple matches at once - REQUIRED METHOD FOR WEB APP"""
+        
+        predictions = []
+        method_name = "integrated" if use_integrated else "legacy"
+        
+        print(f"🔮 Predicting {len(matches_list)} matches using {method_name} method...")
+        
+        for i, match in enumerate(matches_list, 1):
+            home_team = match.get('home_team', match.get('home'))
+            away_team = match.get('away_team', match.get('away'))
+            game_week = match.get('game_week', 22)
+            
+            print(f"   {i}. {home_team} vs {away_team}")
+            
+            if use_integrated:
+                prediction = self.predict_match_integrated(home_team, away_team, game_week)
+                if prediction:
+                    # Validate each prediction
+                    self.validate_prediction_logic(prediction)
+            else:
+                prediction = self.predict_match(home_team, away_team, game_week)
+            
+            if prediction:
+                predictions.append(prediction)
+        
+        return predictions
     
     def predict_match(self, home_team, away_team, game_week=20):
         """LEGACY METHOD - Use predict_match_integrated() for better results"""
@@ -779,109 +630,8 @@ def predict_team_goals_improved(self, home_team, away_team):
         
         predictions['betting_recommendations'] = recommendations
     
-    def generate_integrated_betting_recommendations(self, predictions, match_features, confidence_threshold=0.65):
-        """Generate betting recommendations for integrated predictions - NEW METHOD"""
-        
-        preds = predictions['predictions']
-        recommendations = []
-        
-        # Check outcome betting with higher confidence threshold
-        if 'confidence' in preds and preds['confidence'] >= confidence_threshold:
-            if preds['most_likely'] == 'Home Win' and preds['home_win_prob'] >= confidence_threshold:
-                recommendations.append({
-                    'bet_type': 'Home Win',
-                    'probability': preds['home_win_prob'],
-                    'confidence': preds['confidence'],
-                    'reasoning': f"Integrated model predicts {preds['home_win_prob']:.1%} chance of home win",
-                    'strength': 'High' if preds['confidence'] > 0.75 else 'Medium'
-                })
-            elif preds['most_likely'] == 'Away Win' and preds['away_win_prob'] >= confidence_threshold:
-                recommendations.append({
-                    'bet_type': 'Away Win',
-                    'probability': preds['away_win_prob'],
-                    'confidence': preds['confidence'],
-                    'reasoning': f"Integrated model predicts {preds['away_win_prob']:.1%} chance of away win",
-                    'strength': 'High' if preds['confidence'] > 0.75 else 'Medium'
-                })
-            elif preds['most_likely'] == 'Draw' and preds['draw_prob'] >= confidence_threshold:
-                recommendations.append({
-                    'bet_type': 'Draw',
-                    'probability': preds['draw_prob'],
-                    'confidence': preds['confidence'],
-                    'reasoning': f"Integrated model predicts {preds['draw_prob']:.1%} chance of draw",
-                    'strength': 'High' if preds['confidence'] > 0.75 else 'Medium'
-                })
-        
-        # Check goals betting with consistency
-        if 'over_2.5_prob' in preds:
-            if preds['over_2.5_prob'] >= confidence_threshold:
-                recommendations.append({
-                    'bet_type': 'Over 2.5 Goals',
-                    'probability': preds['over_2.5_prob'],
-                    'confidence': preds['over_2.5_prob'],
-                    'reasoning': f"Consistent prediction: {preds['total_predicted_goals']} goals expected, {preds['over_2.5_prob']:.1%} Over 2.5",
-                    'strength': 'High' if preds['over_2.5_prob'] > 0.8 else 'Medium'
-                })
-            elif preds['under_2.5_prob'] >= confidence_threshold:
-                recommendations.append({
-                    'bet_type': 'Under 2.5 Goals',
-                    'probability': preds['under_2.5_prob'],
-                    'confidence': preds['under_2.5_prob'],
-                    'reasoning': f"Consistent prediction: {preds['total_predicted_goals']} goals expected, {preds['under_2.5_prob']:.1%} Under 2.5",
-                    'strength': 'High' if preds['under_2.5_prob'] > 0.8 else 'Medium'
-                })
-        
-        # Check BTTS with consistency
-        if 'btts_prob' in preds:
-            if preds['btts_prob'] >= confidence_threshold:
-                recommendations.append({
-                    'bet_type': 'Both Teams To Score - Yes',
-                    'probability': preds['btts_prob'],
-                    'confidence': preds['btts_prob'],
-                    'reasoning': f"Consistent prediction: {preds['predicted_score']} score, {preds['btts_prob']:.1%} BTTS",
-                    'strength': 'High' if preds['btts_prob'] > 0.8 else 'Medium'
-                })
-            elif preds['btts_no_prob'] >= confidence_threshold:
-                recommendations.append({
-                    'bet_type': 'Both Teams To Score - No',
-                    'probability': preds['btts_no_prob'],
-                    'confidence': preds['btts_no_prob'],
-                    'reasoning': f"Consistent prediction: {preds['predicted_score']} score, {preds['btts_no_prob']:.1%} No BTTS",
-                    'strength': 'High' if preds['btts_no_prob'] > 0.8 else 'Medium'
-                })
-        
-        predictions['betting_recommendations'] = recommendations
-    
-    def predict_multiple_matches(self, matches_list, use_integrated=True):
-        """Predict multiple matches at once - UPDATED WITH INTEGRATED OPTION"""
-        
-        predictions = []
-        method_name = "integrated" if use_integrated else "legacy"
-        
-        print(f"🔮 Predicting {len(matches_list)} matches using {method_name} method...")
-        
-        for i, match in enumerate(matches_list, 1):
-            home_team = match.get('home_team', match.get('home'))
-            away_team = match.get('away_team', match.get('away'))
-            game_week = match.get('game_week', 22)
-            
-            print(f"   {i}. {home_team} vs {away_team}")
-            
-            if use_integrated:
-                prediction = self.predict_match_integrated(home_team, away_team, game_week)
-                if prediction:
-                    # Validate each prediction
-                    self.validate_prediction_logic(prediction)
-            else:
-                prediction = self.predict_match(home_team, away_team, game_week)
-            
-            if prediction:
-                predictions.append(prediction)
-        
-        return predictions
-    
     def save_predictions(self, predictions):
-        """Save predictions to files with dates included - ENHANCED VERSION"""
+        """Save predictions to files with dates included"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
         # Create predictions directory
@@ -1068,3 +818,253 @@ if __name__ == "__main__":
     
     # Uncomment to test the fixes
     # test_integration_fixes()
+    
+    def get_ml_baseline_predictions(self, match_features):
+        """Get baseline predictions from trained ML models"""
+        ml_preds = {}
+        
+        try:
+            # Outcome prediction (1X2)
+            if 'outcome_rf' in self.trained_model.models:
+                outcome_probs = self.trained_model.models['outcome_rf'].predict_proba(match_features)[0]
+                ml_preds['ml_home_win_prob'] = outcome_probs[0]
+                ml_preds['ml_draw_prob'] = outcome_probs[1] 
+                ml_preds['ml_away_win_prob'] = outcome_probs[2]
+            
+            # Goals predictions
+            if 'over_2.5_rf' in self.trained_model.models:
+                ml_preds['ml_over_2.5_prob'] = self.trained_model.models['over_2.5_rf'].predict_proba(match_features)[0][1]
+            
+            # BTTS prediction  
+            if 'btts_rf' in self.trained_model.models:
+                ml_preds['ml_btts_prob'] = self.trained_model.models['btts_rf'].predict_proba(match_features)[0][1]
+                
+        except Exception as e:
+            print(f"⚠️  ML prediction error: {e}")
+            # Fallback to neutral probabilities
+            ml_preds = {
+                'ml_home_win_prob': 0.4, 'ml_draw_prob': 0.3, 'ml_away_win_prob': 0.3,
+                'ml_over_2.5_prob': 0.5, 'ml_btts_prob': 0.5
+            }
+        
+        return ml_preds
+    
+    def predict_team_goals_improved(self, home_team, away_team):
+        """FIXED: Improved goal prediction with REALISTIC scoring"""
+        
+        # Get team stats
+        home_stats = self.team_stats.get(home_team, {'goals_per_game': 1.2, 'goals_against_per_game': 1.2, 'ppg': 1.5})
+        away_stats = self.team_stats.get(away_team, {'goals_per_game': 1.2, 'goals_against_per_game': 1.2, 'ppg': 1.5})
+        
+        # REALISTIC FORMULA WEIGHTS - Much more conservative
+        home_attack_weight = 0.8    # Increased to use more of actual stats
+        away_defense_weight = 0.2   # Reduced defense impact  
+        away_attack_weight = 0.8    # Increased to use more of actual stats
+        home_defense_weight = 0.2   # Reduced defense impact
+        home_advantage = 0.15       # REDUCED from 0.35 to 0.15
+        
+        # Base expected goals calculation - USE RAW STATS
+        home_attack = home_stats.get('goals_per_game', 1.2)
+        away_defense = away_stats.get('goals_against_per_game', 1.2) 
+        away_attack = away_stats.get('goals_per_game', 1.2)
+        home_defense = home_stats.get('goals_against_per_game', 1.2)
+        
+        # REALISTIC EXPECTED GOALS - Closer to actual team performance
+        home_expected_goals = (
+            (home_attack * home_attack_weight) + 
+            ((1.8 - away_defense) * away_defense_weight)  # REDUCED from 2.5 to 1.8
+        ) + home_advantage
+        
+        away_expected_goals = (
+            (away_attack * away_attack_weight) +
+            ((1.8 - home_defense) * home_defense_weight)  # REDUCED from 2.5 to 1.8
+        )
+        
+        # MINIMAL form adjustment
+        form_impact = 0.08  # REDUCED from 0.2 to 0.08
+        if 'ppg' in home_stats and 'ppg' in away_stats:
+            home_form = (home_stats['ppg'] - 1.5) * form_impact
+            away_form = (away_stats['ppg'] - 1.5) * form_impact
+            home_expected_goals += home_form
+            away_expected_goals += away_form
+        
+        # TIGHT realistic bounds
+        home_expected_goals = max(0.3, min(2.5, home_expected_goals))  # REDUCED max from 3.5 to 2.5
+        away_expected_goals = max(0.3, min(2.5, away_expected_goals))  # REDUCED max from 3.5 to 2.5
+        
+        # Calculate goal-based probabilities
+        total_xg = home_expected_goals + away_expected_goals
+        
+        # REALISTIC OUTCOME PROBABILITIES
+        goal_diff = home_expected_goals - away_expected_goals
+        
+        if goal_diff > 0.5:
+            home_win_prob = 0.55
+            draw_prob = 0.25  
+            away_win_prob = 0.20
+        elif goal_diff > 0.2:
+            home_win_prob = 0.42
+            draw_prob = 0.33
+            away_win_prob = 0.25
+        elif goal_diff < -0.5:
+            home_win_prob = 0.20
+            draw_prob = 0.25
+            away_win_prob = 0.55
+        elif goal_diff < -0.2:
+            home_win_prob = 0.25  
+            draw_prob = 0.33
+            away_win_prob = 0.42
+        else:  # Even match
+            home_win_prob = 0.33
+            draw_prob = 0.34
+            away_win_prob = 0.33
+        
+        # REALISTIC OVER/UNDER
+        if total_xg >= 3.0:
+            over_2_5_prob = 0.70
+        elif total_xg >= 2.5:  
+            over_2_5_prob = 0.55
+        elif total_xg >= 2.0:
+            over_2_5_prob = 0.40
+        elif total_xg >= 1.5:
+            over_2_5_prob = 0.25
+        else:
+            over_2_5_prob = 0.15
+        
+        # REALISTIC BTTS
+        btts_prob = min(0.80, max(0.15, 
+            (min(home_expected_goals, 1.5) * min(away_expected_goals, 1.5)) / 2.25
+        ))
+        
+        return {
+            'home_expected_goals': round(home_expected_goals, 2),
+            'away_expected_goals': round(away_expected_goals, 2), 
+            'total_expected_goals': round(total_xg, 2),
+            'home_predicted_goals': int(round(home_expected_goals)),
+            'away_predicted_goals': int(round(away_expected_goals)),
+            'goal_based_home_win_prob': home_win_prob,
+            'goal_based_draw_prob': draw_prob, 
+            'goal_based_away_win_prob': away_win_prob,
+            'goal_based_over_2_5_prob': over_2_5_prob,
+            'goal_based_btts_prob': btts_prob
+        }
+    
+    def integrate_predictions(self, ml_predictions, goal_predictions):
+        """Integrate ML and goal-based predictions with consistency checks"""
+        
+        # BLENDING WEIGHTS - adjust these to balance ML vs goal-based predictions
+        ML_WEIGHT = 0.4      # How much to trust the ML models
+        GOAL_WEIGHT = 0.6    # How much to trust the goal-based calculations
+        
+        integrated = {}
+        
+        # Blend outcome probabilities
+        integrated['home_win_prob'] = round(
+            (ml_predictions.get('ml_home_win_prob', 0.33) * ML_WEIGHT) + 
+            (goal_predictions['goal_based_home_win_prob'] * GOAL_WEIGHT), 3
+        )
+        
+        integrated['draw_prob'] = round(
+            (ml_predictions.get('ml_draw_prob', 0.33) * ML_WEIGHT) + 
+            (goal_predictions['goal_based_draw_prob'] * GOAL_WEIGHT), 3
+        )
+        
+        integrated['away_win_prob'] = round(
+            (ml_predictions.get('ml_away_win_prob', 0.33) * ML_WEIGHT) + 
+            (goal_predictions['goal_based_away_win_prob'] * GOAL_WEIGHT), 3
+        )
+        
+        # Normalize probabilities to sum to 1.0
+        total_prob = integrated['home_win_prob'] + integrated['draw_prob'] + integrated['away_win_prob']
+        integrated['home_win_prob'] = round(integrated['home_win_prob'] / total_prob, 3)
+        integrated['draw_prob'] = round(integrated['draw_prob'] / total_prob, 3) 
+        integrated['away_win_prob'] = round(integrated['away_win_prob'] / total_prob, 3)
+        
+        # Determine most likely outcome
+        outcome_probs = [integrated['home_win_prob'], integrated['draw_prob'], integrated['away_win_prob']]
+        most_likely_idx = np.argmax(outcome_probs)
+        outcomes = ['Home Win', 'Draw', 'Away Win']
+        integrated['most_likely'] = outcomes[most_likely_idx]
+        integrated['confidence'] = round(outcome_probs[most_likely_idx], 3)
+        
+        # Blend over/under probabilities
+        integrated['over_2.5_prob'] = round(
+            (ml_predictions.get('ml_over_2.5_prob', 0.5) * ML_WEIGHT) + 
+            (goal_predictions['goal_based_over_2_5_prob'] * GOAL_WEIGHT), 3
+        )
+        integrated['under_2.5_prob'] = round(1 - integrated['over_2.5_prob'], 3)
+        
+        # Blend BTTS probabilities  
+        integrated['btts_prob'] = round(
+            (ml_predictions.get('ml_btts_prob', 0.5) * ML_WEIGHT) + 
+            (goal_predictions['goal_based_btts_prob'] * GOAL_WEIGHT), 3
+        )
+        integrated['btts_no_prob'] = round(1 - integrated['btts_prob'], 3)
+        
+        # Add goal predictions
+        integrated['home_predicted_goals'] = goal_predictions['home_predicted_goals']
+        integrated['away_predicted_goals'] = goal_predictions['away_predicted_goals'] 
+        integrated['predicted_score'] = f"{goal_predictions['home_predicted_goals']}-{goal_predictions['away_predicted_goals']}"
+        integrated['home_expected_goals'] = goal_predictions['home_expected_goals']
+        integrated['away_expected_goals'] = goal_predictions['away_expected_goals']
+        integrated['total_expected_goals'] = goal_predictions['total_expected_goals']
+        integrated['total_predicted_goals'] = goal_predictions['home_predicted_goals'] + goal_predictions['away_predicted_goals']
+        
+        # CONSISTENCY CHECKS - Fix obvious contradictions
+        integrated = self.apply_consistency_checks(integrated)
+        
+        return integrated
+    
+    def apply_consistency_checks(self, predictions):
+        """Apply logic checks to ensure predictions make sense"""
+        
+        # Check 1: If predicted score is over 2.5, over 2.5 probability should be high
+        if predictions['total_predicted_goals'] >= 3:
+            predictions['over_2.5_prob'] = max(0.75, predictions['over_2.5_prob'])
+            predictions['under_2.5_prob'] = 1 - predictions['over_2.5_prob']
+            print(f"✅ Consistency fix: Predicted {predictions['total_predicted_goals']} goals, boosted Over 2.5 to {predictions['over_2.5_prob']:.1%}")
+        
+        # Check 2: If both teams predicted to score, BTTS should be high
+        if predictions['home_predicted_goals'] > 0 and predictions['away_predicted_goals'] > 0:
+            predictions['btts_prob'] = max(0.65, predictions['btts_prob'])
+            predictions['btts_no_prob'] = 1 - predictions['btts_prob']
+            print(f"✅ Consistency fix: Both teams score in prediction, boosted BTTS to {predictions['btts_prob']:.1%}")
+        
+        # Check 3: If one team predicted to score 0, BTTS should be low  
+        elif predictions['home_predicted_goals'] == 0 or predictions['away_predicted_goals'] == 0:
+            predictions['btts_prob'] = min(0.35, predictions['btts_prob'])
+            predictions['btts_no_prob'] = 1 - predictions['btts_prob']
+            print(f"✅ Consistency fix: Clean sheet predicted, reduced BTTS to {predictions['btts_prob']:.1%}")
+        
+        # Check 4: Outcome probabilities should match predicted score
+        home_goals = predictions['home_predicted_goals']
+        away_goals = predictions['away_predicted_goals']
+        
+        if home_goals > away_goals:  # Home win predicted
+            if predictions['most_likely'] != 'Home Win':
+                print(f"✅ Consistency fix: Score predicts home win ({home_goals}-{away_goals}), adjusting outcome")
+                predictions['home_win_prob'] = max(0.6, predictions['home_win_prob'])
+                predictions['most_likely'] = 'Home Win'
+                predictions['confidence'] = predictions['home_win_prob']
+                
+        elif away_goals > home_goals:  # Away win predicted  
+            if predictions['most_likely'] != 'Away Win':
+                print(f"✅ Consistency fix: Score predicts away win ({home_goals}-{away_goals}), adjusting outcome")
+                predictions['away_win_prob'] = max(0.6, predictions['away_win_prob']) 
+                predictions['most_likely'] = 'Away Win'
+                predictions['confidence'] = predictions['away_win_prob']
+                
+        else:  # Draw predicted
+            if predictions['most_likely'] != 'Draw':
+                print(f"✅ Consistency fix: Score predicts draw ({home_goals}-{away_goals}), adjusting outcome")
+                predictions['draw_prob'] = max(0.5, predictions['draw_prob'])
+                predictions['most_likely'] = 'Draw' 
+                predictions['confidence'] = predictions['draw_prob']
+        
+        # Re-normalize outcome probabilities after adjustments
+        total = predictions['home_win_prob'] + predictions['draw_prob'] + predictions['away_win_prob']
+        predictions['home_win_prob'] = round(predictions['home_win_prob'] / total, 3)
+        predictions['draw_prob'] = round(predictions['draw_prob'] / total, 3)
+        predictions['away_win_prob'] = round(predictions['away_win_prob'] / total, 3)
+        
+        return predictions
