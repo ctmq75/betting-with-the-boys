@@ -11,10 +11,46 @@ from datetime import datetime, timedelta
 import os
 
 class FutureGamePredictor:
+# Replace the __init__ method in your FutureGamePredictor class
+
     def __init__(self):
         self.trained_model = None
         self.team_stats = {}
         self.feature_columns = []
+        
+        # Default parameters (can be overridden by UI)
+        self.home_advantage = 0.35
+        self.home_attack_weight = 0.6
+        self.away_defense_weight = 0.4
+        self.away_attack_weight = 0.6
+        self.home_defense_weight = 0.4
+        self.form_impact = 0.2
+        self.outcome_adjustment = 0.3
+        self.league_avg_goals = 2.6
+        
+        # Feature weights
+        self.feature_weights = {
+            'recent_form': 1.5,
+            'historical_form': 1.0,
+            'attacking': 1.3,
+            'defensive': 1.1,
+            'home_advantage': 1.2,
+            'xg_importance': 0.9,
+            'possession': 0.8,
+            'set_pieces': 1.1
+        }
+        
+        # Market logic parameters
+        self.strength_diff_major = 0.8
+        self.strength_diff_minor = 0.4
+        self.over25_high_threshold = 3.2
+        self.over25_med_threshold = 2.8
+        
+        # Betting strategy parameters
+        self.default_confidence = 0.65
+        self.outcome_confidence = 0.60
+        self.goals_confidence = 0.65
+        self.btts_confidence = 0.65
         
     def load_trained_model(self):
         """Load the model we trained on historical data"""
@@ -118,16 +154,8 @@ class FutureGamePredictor:
         away_stats = self.team_stats.get(away_team, {'ppg': 1.0, 'goals_per_game': 1.0, 'goals_against_per_game': 1.0})
         
         # FEATURE IMPORTANCE WEIGHTS - Adjust these to change what the model focuses on
-        FEATURE_WEIGHTS = {
-            'recent_form': 1.5,      # Recent PPG gets 1.5x weight (very important)
-            'historical_form': 1.0,   # Overall PPG gets normal weight  
-            'attacking': 1.3,        # Goals scored gets 1.3x weight (important)
-            'defensive': 1.1,        # Goals conceded gets 1.1x weight
-            'home_advantage': 1.2,   # Home advantage multiplier
-            'xg_importance': 0.9,    # Expected goals less important than actual goals
-            'possession': 0.8,       # Possession less important
-            'set_pieces': 1.1        # Corners slightly more important
-        }
+        # FEATURE IMPORTANCE WEIGHTS - Now using dynamic parameters
+        FEATURE_WEIGHTS = self.feature_weights
         
         # Create feature dictionary matching training data structure
         features = {}
@@ -203,15 +231,15 @@ class FutureGamePredictor:
         strength_diff = home_strength - away_strength
         
         # More nuanced odds estimation
-        if strength_diff > 0.8:  # Home very strong
+        if strength_diff > self.strength_diff_major:  # Home very strong
             home_odds, away_odds, draw_odds = 1.6, 5.5, 4.0
-        elif strength_diff > 0.4:  # Home strong
+        elif strength_diff > self.strength_diff_minor:  # Home strong
             home_odds, away_odds, draw_odds = 1.9, 4.2, 3.6
         elif strength_diff > 0.1:  # Home slight edge
             home_odds, away_odds, draw_odds = 2.3, 3.4, 3.2
-        elif strength_diff < -0.8:  # Away very strong
+        elif strength_diff < -self.strength_diff_major:  # Away very strong
             home_odds, away_odds, draw_odds = 5.5, 1.6, 4.0
-        elif strength_diff < -0.4:  # Away strong
+        elif strength_diff < -self.strength_diff_minor:  # Away strong
             home_odds, away_odds, draw_odds = 4.2, 1.9, 3.6
         elif strength_diff < -0.1:  # Away slight edge
             home_odds, away_odds, draw_odds = 3.4, 2.3, 3.2
@@ -228,9 +256,9 @@ class FutureGamePredictor:
         # GOALS BETTING with weights
         total_expected_goals = (home_xg + away_xg) * FEATURE_WEIGHTS['attacking']
         
-        if total_expected_goals > 3.2:
+        if total_expected_goals > self.over25_high_threshold:
             over25_odds = 1.5
-        elif total_expected_goals > 2.8:
+        elif total_expected_goals > self.over25_med_threshold:
             over25_odds = 1.7
         elif total_expected_goals > 2.4:
             over25_odds = 2.0
@@ -394,11 +422,16 @@ class FutureGamePredictor:
         away_stats = self.team_stats.get(away_team, {'goals_per_game': 1.2, 'goals_against_per_game': 1.2, 'ppg': 1.5})
         
         # REALISTIC FORMULA WEIGHTS - Much more conservative
-        home_attack_weight = 0.8    # Increased to use more of actual stats
-        away_defense_weight = 0.2   # Reduced defense impact  
-        away_attack_weight = 0.8    # Increased to use more of actual stats
-        home_defense_weight = 0.2   # Reduced defense impact
-        home_advantage = 0.15       # REDUCED from 0.35 to 0.15
+        # home_attack_weight = 0.8    # Increased to use more of actual stats
+        # away_defense_weight = 0.2   # Reduced defense impact  
+        # away_attack_weight = 0.8    # Increased to use more of actual stats
+        # home_defense_weight = 0.2   # Reduced defense impact
+        # home_advantage = 0.15       # REDUCED from 0.35 to 0.15
+        home_attack_weight = self.home_attack_weight
+        away_defense_weight = self.away_defense_weight  
+        away_attack_weight = self.away_attack_weight
+        home_defense_weight = self.home_defense_weight
+        home_advantage = self.home_advantage
         
         # Base expected goals calculation - USE RAW STATS
         home_attack = home_stats.get('goals_per_game', 1.2)
@@ -409,16 +442,16 @@ class FutureGamePredictor:
         # REALISTIC EXPECTED GOALS - Closer to actual team performance
         home_expected_goals = (
             (home_attack * home_attack_weight) + 
-            ((1.8 - away_defense) * away_defense_weight)  # REDUCED from 2.5 to 1.8
+            ((self.league_avg_goals - 0.7 - away_defense) * away_defense_weight)
         ) + home_advantage
         
         away_expected_goals = (
             (away_attack * away_attack_weight) +
-            ((1.8 - home_defense) * home_defense_weight)  # REDUCED from 2.5 to 1.8
+            ((self.league_avg_goals - 0.7 - home_defense) * home_defense_weight)
         )
         
         # MINIMAL form adjustment
-        form_impact = 0.08  # REDUCED from 0.2 to 0.08
+        form_impact = self.form_impact
         if 'ppg' in home_stats and 'ppg' in away_stats:
             home_form = (home_stats['ppg'] - 1.5) * form_impact
             away_form = (away_stats['ppg'] - 1.5) * form_impact

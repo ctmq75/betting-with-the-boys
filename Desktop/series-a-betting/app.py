@@ -1,6 +1,7 @@
 """
 Serie A Betting Predictions - Web App
 Streamlit interface for friends to use the betting model
+WITH MODEL TUNING UI
 """
 
 import streamlit as st
@@ -8,6 +9,49 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import os
+
+def apply_custom_parameters_to_predictor(predictor):
+    """Apply custom parameters from UI to the predictor"""
+    if 'custom_params' in st.session_state:
+        params = st.session_state['custom_params']
+        
+        # Apply goal prediction parameters
+        predictor.home_advantage = params.get('home_advantage', 0.35)
+        predictor.home_attack_weight = params.get('home_attack_weight', 0.6)
+        predictor.away_defense_weight = params.get('away_defense_weight', 0.4)
+        predictor.away_attack_weight = params.get('away_attack_weight', 0.6)
+        predictor.home_defense_weight = params.get('home_defense_weight', 0.4)
+        predictor.form_impact = params.get('form_impact', 0.2)
+        predictor.outcome_adjustment = params.get('outcome_adjustment', 0.3)
+        predictor.league_avg_goals = params.get('league_avg_goals', 2.6)
+        
+        # Feature weights
+        predictor.feature_weights = {
+            'recent_form': params.get('recent_form_weight', 1.5),
+            'historical_form': 1.0,
+            'attacking': params.get('attacking_weight', 1.3),
+            'defensive': params.get('defensive_weight', 1.1),
+            'home_advantage': params.get('home_advantage_weight', 1.2),
+            'xg_importance': params.get('xg_importance', 0.9),
+            'possession': params.get('possession_weight', 0.8),
+            'set_pieces': 1.1
+        }
+        
+        # Market logic parameters
+        predictor.strength_diff_major = params.get('strength_diff_major', 0.8)
+        predictor.strength_diff_minor = params.get('strength_diff_minor', 0.4)
+        predictor.over25_high_threshold = params.get('over25_high_threshold', 3.2)
+        predictor.over25_med_threshold = params.get('over25_med_threshold', 2.8)
+        
+        # Betting strategy parameters
+        predictor.default_confidence = params.get('default_confidence', 0.65)
+        predictor.outcome_confidence = params.get('outcome_confidence', 0.60)
+        predictor.goals_confidence = params.get('goals_confidence', 0.65)
+        predictor.btts_confidence = params.get('btts_confidence', 0.65)
+        
+        st.info("🎛️ Using custom parameters for predictions!")
+    
+    return predictor
 
 # Page config
 st.set_page_config(
@@ -137,6 +181,9 @@ if df is not None:
                 # Initialize predictor
                 predictor = FutureGamePredictor()
                 
+                # Apply custom parameters if they exist
+                predictor = apply_custom_parameters_to_predictor(predictor)
+                
                 # Show progress
                 progress_bar = st.progress(0)
                 status_text = st.empty()
@@ -165,11 +212,25 @@ if df is not None:
                 status_text.text("Generating predictions...")
                 predictions = predictor.predict_multiple_matches(fixtures)
                 
-                # Add dates back to predictions
+                # Add dates back to predictions and ensure all fields exist
                 for i, pred in enumerate(predictions):
                     if i < len(fixtures):
                         pred['match_date'] = fixtures[i].get('match_date', 'TBD')
                         pred['match_time'] = fixtures[i].get('match_time', '')
+                    
+                    # Ensure required fields exist
+                    if 'predictions' in pred:
+                        p = pred['predictions']
+                        # Add missing fields if they don't exist
+                        if 'total_predicted_goals' not in p:
+                            home_goals = p.get('home_predicted_goals', 1)
+                            away_goals = p.get('away_predicted_goals', 1)
+                            p['total_predicted_goals'] = home_goals + away_goals
+                        
+                        if 'predicted_score' not in p:
+                            home_goals = p.get('home_predicted_goals', 1)
+                            away_goals = p.get('away_predicted_goals', 1)
+                            p['predicted_score'] = f"{home_goals}-{away_goals}"
                 
                 progress_bar.progress(100)
                 status_text.text("✅ Analysis complete!")
@@ -181,6 +242,12 @@ if df is not None:
                 # Clear progress indicators
                 progress_bar.empty()
                 status_text.empty()
+                
+                # Show parameter info if custom params are being used
+                if 'custom_params' in st.session_state:
+                    st.success("🎛️ Predictions generated using your custom parameters!")
+                    with st.expander("📊 Current Parameter Settings"):
+                        st.json(st.session_state['custom_params'])
                 
                 # Display results
                 st.header("🎯 Prediction Results")
@@ -237,74 +304,4 @@ if df is not None:
                                     st.write("**Goals Predictions:**")
                                     st.write(f"- Over 2.5: {p.get('over_2.5_prob', 0)*100:.1f}%")
                                     st.write(f"- Under 2.5: {p.get('under_2.5_prob', 0)*100:.1f}%")
-                                    st.write(f"- BTTS Yes: {p.get('btts_prob', 0)*100:.1f}%")
-                                
-                                with col2:
-                                    if 'home_predicted_goals' in p:
-                                        st.write("**Expected Goals:**")
-                                        st.write(f"- Home: {p.get('home_predicted_goals', 0)} goals")
-                                        st.write(f"- Away: {p.get('away_predicted_goals', 0)} goals")
-                                        st.write(f"- Total: {p.get('total_predicted_goals', 0)} goals")
-                            
-                            # Betting recommendations
-                            if pred.get('betting_recommendations'):
-                                st.write("**💰 Betting Recommendations:**")
-                                for bet in pred['betting_recommendations']:
-                                    confidence_color = "🟢" if bet['probability'] > 0.7 else "🟡"
-                                    st.write(f"{confidence_color} **{bet['bet_type']}** - {bet['probability']*100:.1f}% confidence")
-                                    st.write(f"   *{bet['reasoning']}*")
-                            else:
-                                st.info("💡 No high-confidence betting recommendations for this match")
-                
-                # Download section
-                st.header("📥 Download Results")
-                
-                # Prepare CSV data
-                csv_data = []
-                for pred in predictions:
-                    row = {
-                        'match': pred['match'],
-                        'home_team': pred['home_team'],
-                        'away_team': pred['away_team'],
-                        'match_date': pred.get('match_date', 'TBD'),
-                        'match_time': pred.get('match_time', '')
-                    }
-                    
-                    if 'predictions' in pred:
-                        row.update(pred['predictions'])
-                    
-                    if pred.get('betting_recommendations'):
-                        row['recommended_bets'] = '; '.join([
-                            f"{bet['bet_type']} ({bet['probability']:.1%})" 
-                            for bet in pred['betting_recommendations']
-                        ])
-                    else:
-                        row['recommended_bets'] = 'No strong recommendations'
-                    
-                    csv_data.append(row)
-                
-                results_df = pd.DataFrame(csv_data)
-                
-                # Convert to CSV
-                csv = results_df.to_csv(index=False)
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                
-                st.download_button(
-                    label="📊 Download Predictions CSV",
-                    data=csv,
-                    file_name=f"serie_a_predictions_{timestamp}.csv",
-                    mime="text/csv"
-                )
-                
-                st.success("🎉 Predictions complete! Download your results above.")
-                
-            except ImportError as e:
-                st.error("❌ Model files not found. Make sure predict_future.py and src/betting_model.py are in the same folder.")
-                st.code(str(e))
-            except Exception as e:
-                st.error(f"❌ Error generating predictions: {str(e)}")
-                st.code(str(e))
-
-# Footer
-st.markdown("---")
-st.markdown("**⚠️ Disclaimer:** This is for entertainment purposes only. Gamble responsibly.")
+                             
