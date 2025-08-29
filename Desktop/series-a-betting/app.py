@@ -304,4 +304,294 @@ if df is not None:
                                     st.write("**Goals Predictions:**")
                                     st.write(f"- Over 2.5: {p.get('over_2.5_prob', 0)*100:.1f}%")
                                     st.write(f"- Under 2.5: {p.get('under_2.5_prob', 0)*100:.1f}%")
-                             
+                                    st.write(f"- BTTS Yes: {p.get('btts_prob', 0)*100:.1f}%")
+                                with col2:
+                                    if 'home_predicted_goals' in p:
+                                        st.write("**Expected Goals:**")
+                                        st.write(f"- Home: {p.get('home_predicted_goals', 0)} goals")
+                                        st.write(f"- Away: {p.get('away_predicted_goals', 0)} goals")
+                                        st.write(f"- Total: {p.get('total_predicted_goals', 0)} goals")
+                            
+                            # Betting recommendations
+                            if pred.get('betting_recommendations'):
+                                st.write("**💰 Betting Recommendations:**")
+                                for bet in pred['betting_recommendations']:
+                                    confidence_color = "🟢" if bet['probability'] > 0.7 else "🟡"
+                                    st.write(f"{confidence_color} **{bet['bet_type']}** - {bet['probability']*100:.1f}% confidence")
+                                    st.write(f"   *{bet['reasoning']}*")
+                            else:
+                                st.info("💡 No high-confidence betting recommendations for this match")
+                
+                # Download section
+                st.header("📥 Download Results")
+                
+                # Prepare CSV data
+                csv_data = []
+                for pred in predictions:
+                    row = {
+                        'match': pred['match'],
+                        'home_team': pred['home_team'],
+                        'away_team': pred['away_team'],
+                        'match_date': pred.get('match_date', 'TBD'),
+                        'match_time': pred.get('match_time', '')
+                    }
+                    
+                    if 'predictions' in pred:
+                        row.update(pred['predictions'])
+                    
+                    if pred.get('betting_recommendations'):
+                        row['recommended_bets'] = '; '.join([
+                            f"{bet['bet_type']} ({bet['probability']:.1%})" 
+                            for bet in pred['betting_recommendations']
+                        ])
+                    else:
+                        row['recommended_bets'] = 'No strong recommendations'
+                    
+                    csv_data.append(row)
+                
+                results_df = pd.DataFrame(csv_data)
+                
+                # Convert to CSV
+                csv = results_df.to_csv(index=False)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                
+                st.download_button(
+                    label="📊 Download Predictions CSV",
+                    data=csv,
+                    file_name=f"serie_a_predictions_{timestamp}.csv",
+                    mime="text/csv"
+                )
+                
+                st.success("🎉 Predictions complete! Download your results above.")
+                
+            except ImportError as e:
+                st.error("❌ Model files not found. Make sure predict_future.py and src/betting_model.py are in the same folder.")
+                st.code(str(e))
+            except Exception as e:
+                st.error(f"❌ Error generating predictions: {str(e)}")
+                st.code(str(e))
+
+# Model Tuning Section
+st.header("🔧 Model Tuning (Advanced)")
+with st.expander("Adjust Model Parameters", expanded=False):
+    st.markdown("### ⚙️ Fine-tune the prediction algorithms")
+    
+    # Create tabs for different adjustment categories
+    tab1, tab2, tab3, tab4 = st.tabs(["⚽ Goal Prediction", "🏠 Team Weights", "📊 Market Logic", "🎯 Betting Strategy"])
+    
+    with tab1:
+        st.subheader("Goal Prediction Formulas")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            home_advantage = st.slider(
+                "Home Advantage (goals)", 
+                0.0, 0.6, 0.35, 0.05,
+                help="Extra goals home teams get on average"
+            )
+            
+            home_attack_weight = st.slider(
+                "Home Attack Weight", 
+                0.3, 1.0, 0.6, 0.1,
+                help="How much home team's scoring ability matters"
+            )
+            
+            away_defense_weight = st.slider(
+                "Away Defense Weight", 
+                0.0, 0.7, 0.4, 0.1,
+                help="How much away team's defensive ability matters"
+            )
+            
+        with col2:
+            form_impact = st.slider(
+                "Recent Form Impact", 
+                0.0, 0.5, 0.2, 0.05,
+                help="How much recent form affects goal predictions"
+            )
+            
+            outcome_adjustment = st.slider(
+                "Winner Adjustment", 
+                0.0, 0.5, 0.3, 0.1,
+                help="Goal boost for predicted winner"
+            )
+            
+            league_avg_goals = st.slider(
+                "League Average Goals", 
+                2.0, 3.5, 2.6, 0.1,
+                help="Serie A average goals per match"
+            )
+    
+    with tab2:
+        st.subheader("Feature Importance Weights")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            recent_form_weight = st.slider(
+                "Recent Form Weight", 
+                0.8, 2.0, 1.5, 0.1,
+                help="Importance of recent PPG"
+            )
+            
+            attacking_weight = st.slider(
+                "Attacking Weight", 
+                0.8, 2.0, 1.3, 0.1,
+                help="Importance of goals scored"
+            )
+            
+            defensive_weight = st.slider(
+                "Defensive Weight", 
+                0.8, 1.5, 1.1, 0.1,
+                help="Importance of goals conceded"
+            )
+            
+        with col2:
+            home_advantage_weight = st.slider(
+                "Home Advantage Multiplier", 
+                1.0, 1.5, 1.2, 0.1,
+                help="Boost for home teams in all stats"
+            )
+            
+            xg_importance = st.slider(
+                "Expected Goals Weight", 
+                0.5, 1.2, 0.9, 0.1,
+                help="How much to trust xG vs actual goals"
+            )
+            
+            possession_weight = st.slider(
+                "Possession Weight", 
+                0.3, 1.2, 0.8, 0.1,
+                help="Importance of possession stats"
+            )
+    
+    with tab3:
+        st.subheader("Market & Odds Logic")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("**Odds Calculation Thresholds:**")
+            strength_diff_major = st.slider(
+                "Major Advantage Threshold", 
+                0.5, 1.2, 0.8, 0.1,
+                help="PPG difference for major advantage"
+            )
+            
+            strength_diff_minor = st.slider(
+                "Minor Advantage Threshold", 
+                0.1, 0.6, 0.4, 0.1,
+                help="PPG difference for minor advantage"
+            )
+            
+        with col2:
+            st.write("**Goals Betting:**")
+            over25_high_threshold = st.slider(
+                "High Over 2.5 Threshold", 
+                2.8, 3.8, 3.2, 0.1,
+                help="Total xG for short over 2.5 odds"
+            )
+            
+            over25_med_threshold = st.slider(
+                "Medium Over 2.5 Threshold", 
+                2.2, 3.0, 2.8, 0.1,
+                help="Total xG for medium over 2.5 odds"
+            )
+    
+    with tab4:
+        st.subheader("Betting Strategy")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            default_confidence = st.slider(
+                "Default Confidence Threshold", 
+                0.55, 0.80, 0.65, 0.05,
+                help="Base confidence required for recommendations"
+            )
+            
+            outcome_confidence = st.slider(
+                "Outcome Bet Confidence", 
+                0.55, 0.75, 0.60, 0.05,
+                help="Confidence needed for 1X2 bets"
+            )
+            
+        with col2:
+            goals_confidence = st.slider(
+                "Goals Bet Confidence", 
+                0.60, 0.80, 0.65, 0.05,
+                help="Confidence needed for Over/Under bets"
+            )
+            
+            btts_confidence = st.slider(
+                "BTTS Confidence", 
+                0.60, 0.80, 0.65, 0.05,
+                help="Confidence needed for BTTS bets"
+            )
+    
+    # Save/Load Presets
+    st.markdown("### 💾 Preset Configurations")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("🔥 Aggressive Preset"):
+            st.session_state.update({
+                'home_advantage': 0.4,
+                'attacking_weight': 1.5,
+                'recent_form_weight': 1.8,
+                'default_confidence': 0.60
+            })
+            st.success("Applied Aggressive preset!")
+    
+    with col2:
+        if st.button("🛡️ Conservative Preset"):
+            st.session_state.update({
+                'home_advantage': 0.25,
+                'attacking_weight': 1.0,
+                'recent_form_weight': 1.2,
+                'default_confidence': 0.70
+            })
+            st.success("Applied Conservative preset!")
+    
+    with col3:
+        if st.button("⚖️ Balanced Preset"):
+            st.session_state.update({
+                'home_advantage': 0.35,
+                'attacking_weight': 1.3,
+                'recent_form_weight': 1.5,
+                'default_confidence': 0.65
+            })
+            st.success("Applied Balanced preset!")
+    
+    # Apply custom parameters button
+    if st.button("🚀 Apply Custom Parameters", type="primary"):
+        # Store all the parameters in session state
+        custom_params = {
+            'home_advantage': home_advantage,
+            'home_attack_weight': home_attack_weight,
+            'away_defense_weight': away_defense_weight,
+            'form_impact': form_impact,
+            'outcome_adjustment': outcome_adjustment,
+            'league_avg_goals': league_avg_goals,
+            'recent_form_weight': recent_form_weight,
+            'attacking_weight': attacking_weight,
+            'defensive_weight': defensive_weight,
+            'home_advantage_weight': home_advantage_weight,
+            'xg_importance': xg_importance,
+            'possession_weight': possession_weight,
+            'strength_diff_major': strength_diff_major,
+            'strength_diff_minor': strength_diff_minor,
+            'over25_high_threshold': over25_high_threshold,
+            'over25_med_threshold': over25_med_threshold,
+            'default_confidence': default_confidence,
+            'outcome_confidence': outcome_confidence,
+            'goals_confidence': goals_confidence,
+            'btts_confidence': btts_confidence
+        }
+        
+        st.session_state['custom_params'] = custom_params
+        st.success("✅ Custom parameters saved! Re-run predictions to see changes.")
+        
+        # Show current parameter summary
+        st.markdown("**Current Settings:**")
+        st.json(custom_params)
+
+# Footer
+st.markdown("---")
+st.markdown("**⚠️ Disclaimer:** This is for entertainment purposes only. Gamble responsibly.")
